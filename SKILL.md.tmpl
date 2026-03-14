@@ -12,8 +12,6 @@ allowed-tools:
   - Read
 
 ---
-<!-- AUTO-GENERATED from SKILL.md.tmpl — do not edit directly -->
-<!-- Regenerate: bun run gen:skill-docs -->
 
 # gstack browse: QA Testing & Dogfooding
 
@@ -23,12 +21,9 @@ Auto-shuts down after 30 min idle. State persists between calls (cookies, tabs, 
 ## SETUP (run this check BEFORE any browse command)
 
 ```bash
-BROWSE_OUTPUT=$(browse/bin/find-browse 2>/dev/null || ~/.claude/skills/gstack/browse/bin/find-browse 2>/dev/null)
-B=$(echo "$BROWSE_OUTPUT" | head -1)
-META=$(echo "$BROWSE_OUTPUT" | grep "^META:" || true)
+B=$(browse/bin/find-browse 2>/dev/null || ~/.claude/skills/gstack/browse/bin/find-browse 2>/dev/null)
 if [ -n "$B" ]; then
   echo "READY: $B"
-  [ -n "$META" ] && echo "$META"
 else
   echo "NEEDS_SETUP"
 fi
@@ -38,13 +33,6 @@ If `NEEDS_SETUP`:
 1. Tell the user: "gstack browse needs a one-time build (~10 seconds). OK to proceed?" Then STOP and wait.
 2. Run: `cd <SKILL_DIR> && ./setup`
 3. If `bun` is not installed: `curl -fsSL https://bun.sh/install | bash`
-
-If you see `META:UPDATE_AVAILABLE`:
-1. Parse the JSON payload to get `current`, `latest`, and `command`.
-2. Tell the user: "A gstack update is available (current: X, latest: Y). OK to update?"
-3. **STOP and wait for approval.**
-4. Run the command from the META payload.
-5. Re-run the setup check above to get the updated binary path.
 
 ## IMPORTANT
 
@@ -239,118 +227,11 @@ $B css ".button" "background-color"
 
 ## Snapshot System
 
-The snapshot is your primary tool for understanding and interacting with pages.
-
-```
--i        Interactive elements only (buttons, links, inputs) with @e refs
--c        Compact (no empty structural nodes)
--d <N>    Limit depth
--s <sel>  Scope to CSS selector
--D        Diff against previous snapshot (what changed?)
--a        Annotated screenshot with ref labels
--o <path> Output path for screenshot
--C        Cursor-interactive elements (@c refs — divs with pointer, onclick)
-```
-
-Combine flags: `$B snapshot -i -a -C -o /tmp/annotated.png`
-
-After snapshot, use @refs everywhere:
-```bash
-$B click @e3       $B fill @e4 "value"     $B hover @e1
-$B html @e2        $B css @e5 "color"      $B attrs @e6
-$B click @c1       # cursor-interactive ref (from -C)
-```
-
-Refs are invalidated on navigation — run `snapshot` again after `goto`.
+{{SNAPSHOT_FLAGS}}
 
 ## Command Reference
 
-### Navigation
-| Command | Description |
-|---------|-------------|
-| `back` | History back |
-| `forward` | History forward |
-| `goto <url>` | Navigate to URL |
-| `reload` | Reload page |
-| `url` | Print current URL |
-
-### Reading
-| Command | Description |
-|---------|-------------|
-| `accessibility` | Full ARIA tree |
-| `forms` | Form fields as JSON |
-| `html [selector]` | innerHTML |
-| `links` | All links as "text → href" |
-| `text` | Cleaned page text |
-
-### Interaction
-| Command | Description |
-|---------|-------------|
-| `click <sel>` | Click element |
-| `cookie` | Set cookie |
-| `cookie-import <json>` | Import cookies from JSON file |
-| `cookie-import-browser [browser] [--domain d]` | Import cookies from real browser (opens picker UI, or direct with --domain) |
-| `dialog-accept [text]` | Auto-accept next alert/confirm/prompt |
-| `dialog-dismiss` | Auto-dismiss next dialog |
-| `fill <sel> <val>` | Fill input |
-| `header <name> <value>` | Set custom request header |
-| `hover <sel>` | Hover element |
-| `press <key>` | Press key (Enter, Tab, Escape, etc.) |
-| `scroll [sel]` | Scroll element into view |
-| `select <sel> <val>` | Select dropdown option |
-| `type <text>` | Type into focused element |
-| `upload <sel> <file...>` | Upload file(s) |
-| `useragent <string>` | Set user agent |
-| `viewport <WxH>` | Set viewport size |
-| `wait <sel|--networkidle|--load>` | Wait for element/condition |
-
-### Inspection
-| Command | Description |
-|---------|-------------|
-| `attrs <sel|@ref>` | Element attributes as JSON |
-| `console [--clear|--errors]` | Console messages (--errors filters to error/warning) |
-| `cookies` | All cookies as JSON |
-| `css <sel> <prop>` | Computed CSS value |
-| `dialog [--clear]` | Dialog messages |
-| `eval <file>` | Run JS file |
-| `is <prop> <sel>` | State check (visible/hidden/enabled/disabled/checked/editable/focused) |
-| `js <expr>` | Run JavaScript |
-| `network [--clear]` | Network requests |
-| `perf` | Page load timings |
-| `storage [set k v]` | localStorage + sessionStorage |
-
-### Visual
-| Command | Description |
-|---------|-------------|
-| `diff <url1> <url2>` | Text diff between pages |
-| `pdf [path]` | Save as PDF |
-| `responsive [prefix]` | Mobile/tablet/desktop screenshots |
-| `screenshot [path]` | Save screenshot |
-
-### Snapshot
-| Command | Description |
-|---------|-------------|
-| `snapshot [flags]` | Accessibility tree with @refs |
-
-### Meta
-| Command | Description |
-|---------|-------------|
-| `chain` | Multi-command from JSON stdin |
-
-### Tabs
-| Command | Description |
-|---------|-------------|
-| `closetab [id]` | Close tab |
-| `newtab [url]` | Open new tab |
-| `tab <id>` | Switch to tab |
-| `tabs` | List open tabs |
-
-### Server
-| Command | Description |
-|---------|-------------|
-| `restart` | Restart server |
-| `status` | Health check |
-| `stop` | Shutdown server |
+{{COMMAND_REFERENCE}}
 
 ## Tips
 
