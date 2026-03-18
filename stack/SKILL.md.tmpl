@@ -38,7 +38,8 @@ _STACK_FILE=~/.gstack/projects/$SLUG/callstack.md
 
 The user's invocation determines the mode:
 
-- `/stack` → **VIEW** — display the current call stack
+- `/stack` → **VIEW** — display the full call stack (file as-is, nothing folded)
+- `/stack brief` → **BRIEF** — compact view: fold completed items, expand current + pending
 - `/stack update` → **UPDATE** — the user will describe what changed, update the file
 - `/stack init` → **INIT** — create a new call stack from scratch (interactive)
 
@@ -55,7 +56,20 @@ cat ~/.gstack/projects/$SLUG/callstack.md 2>/dev/null || echo "NO_STACK_FILE"
 
 If `NO_STACK_FILE`: tell the user "No call stack found for this project. Run `/stack init` to create one."
 
-If the file exists, display it as-is. The file is already formatted for human readability. Then add a one-line summary:
+If the file exists, display it **as-is** — every line, nothing folded, nothing summarized. The file is the source of truth. Then add a one-line summary:
+
+---
+
+## Mode: BRIEF (compact view)
+
+Read the same file as VIEW, but display a compact version:
+
+1. For completed top-level items (`- [x]`): show one line with the item text
+2. For completed sub-items under an incomplete parent: fold into a count — e.g., `  - [x] 2.1~2.13 done (13 items)`
+3. For the current item (`← HERE`) and all items after it: show in full, unfolded
+4. Always show the full summary line at the bottom
+
+This is a **display-only transformation** — never modify the actual file. The file always stores the full history.
 
 ```
 📍 Current: [the item marked ← HERE]
