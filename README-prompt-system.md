@@ -111,9 +111,17 @@ Every user message is classified before routing (ADR-004):
 - **L** (learning) routes to the education system — the project's core entry point
 - Fuzzy defaults to A: over-think rather than over-execute
 
-### One agent, one task
+### One agent, one domain (revised from "one task")
 
-Each agent role does exactly one thing. The secretary routes, the researcher researches, the writer writes. The secretary never writes files. The researcher never routes messages.
+Each agent covers one cohesive domain, not one output type. The secretary handles routing + routing prompt construction (these are inseparable). The researcher handles technique validation + template injection. No separate prompt-writer agent — that capability is split between secretary (routing prompts) and prompt-research deploy (template optimization). See ADR-003 revision.
+
+### Flat management, not dictatorship (ADR-005)
+
+Agents can challenge humans. Subagents can push back on the secretary. The relationship is collaborative, not hierarchical. Challenges must be fact-based with a round limit — exceed it and escalate to human.
+
+### Constitutional protection (ADR-006)
+
+ADRs and L3 design principles are "constitutional" — no single party (human or agent) can modify them unilaterally. Changes require: proposal → architect evaluation → human review → approval. Unapproved changes are invalid and should be rolled back.
 
 ### Knowledge governance
 
@@ -127,9 +135,9 @@ Architecture decisions recorded as ADRs. Design principles accumulated via KC-1~
 | 2 | /prompt-research (research tool) | Done |
 | 3 | /stack (call stack visibility) | Done |
 | 4 | Knowledge governance (ADR + DP + DF + KC) | Done |
-| 5 | Education system (core entry point — learn before you use) | Planned |
-| 6 | /prompt-writer (apply research findings) | Planned |
-| 7 | Continuous learning (self-evolution from practice) | Planned |
+| 5 | Secretary as default entry point (not slash command) | Next |
+| 6 | Education system (core entry point — learn before you use) | Planned |
+| 7 | Continuous learning (self-evolution from practice) | Deferred (DF-001) |
 | 8 | Multi-session coordination (5-layer system) | Designed, not built |
 | 9 | Independent project scaffold | Planned |
 
