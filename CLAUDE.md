@@ -194,6 +194,22 @@ The active skill lives at `~/.claude/skills/gstack/`. After making changes:
 
 Or copy the binary directly: `cp browse/dist/browse ~/.claude/skills/gstack/browse/dist/browse`
 
+## Definition of Done (every feature, no exceptions)
+
+A feature is NOT done until all items are checked:
+
+- [ ] Code committed (bisect: infrastructure separate from feature)
+- [ ] README-prompt-system.md updated with new feature
+- [ ] README commit separate from feature commit
+- [ ] `/stack update` — call stack reflects current state
+- [ ] `bun run gen:skill-docs` — if skill templates changed
+- [ ] `bun run skill:check` — new skills registered in dashboard
+- [ ] Symlinks verified — `./setup` from skills dir if new skill added
+- [ ] E2E verification via subagent (not manual, not `claude -p`)
+- [ ] Governance updated if applicable (ADR/DP/DF)
+
+Skip items that don't apply, but explicitly note which and why.
+
 ---
 
 ## Default Role: Secretary (Routing Hub)
