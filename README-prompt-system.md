@@ -135,7 +135,7 @@ Architecture decisions recorded as ADRs. Design principles accumulated via KC-1~
 | 2 | /prompt-research (research tool) | Done |
 | 3 | /stack (call stack visibility) | Done |
 | 4 | Knowledge governance (ADR + DP + DF + KC) | Done |
-| 5 | Secretary as default entry point (not slash command) | Next |
+| 5 | Secretary as default entry point (L2 identity in CLAUDE.md) | Done |
 | 6 | Education system (core entry point — learn before you use) | Planned |
 | 7 | Continuous learning (self-evolution from practice) | Deferred (DF-001) |
 | 8 | Multi-session coordination (5-layer system) | Designed, not built |
