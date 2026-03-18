@@ -2841,6 +2841,235 @@ Output the diagram directly.`,
   }, 180_000);
 });
 
+// --- Prompt Research E2E ---
+
+describeIfSelected('Prompt Research E2E', ['prompt-research-status', 'prompt-research-scout', 'prompt-research-bootstrap'], () => {
+  let researchDir: string;
+  let researchCorpusDir: string;
+
+  beforeAll(() => {
+    researchDir = fs.mkdtempSync(path.join(os.tmpdir(), 'skill-e2e-prompt-research-'));
+
+    // Use an isolated corpus directory (not ~/.gstack) to avoid polluting real state
+    researchCorpusDir = path.join(researchDir, '.gstack', 'prompt-research');
+    fs.mkdirSync(researchCorpusDir, { recursive: true });
+
+    // Copy prompt-research skill
+    fs.mkdirSync(path.join(researchDir, 'prompt-research'), { recursive: true });
+    fs.copyFileSync(
+      path.join(ROOT, 'prompt-research', 'SKILL.md'),
+      path.join(researchDir, 'prompt-research', 'SKILL.md'),
+    );
+
+    // Init a minimal git repo so the preamble works
+    const run = (cmd: string, args: string[]) =>
+      spawnSync(cmd, args, { cwd: researchDir, stdio: 'pipe', timeout: 5000 });
+    run('git', ['init']);
+    run('git', ['config', 'user.email', 'test@test.com']);
+    run('git', ['config', 'user.name', 'Test']);
+    fs.writeFileSync(path.join(researchDir, 'README.md'), '# Research Test\n');
+    run('git', ['add', '.']);
+    run('git', ['commit', '-m', 'initial']);
+  });
+
+  afterAll(() => {
+    try { fs.rmSync(researchDir, { recursive: true, force: true }); } catch {}
+  });
+
+  testIfSelected('prompt-research-status', async () => {
+    const result = await runSkillTest({
+      prompt: `Read prompt-research/SKILL.md for the skill workflow.
+
+You are running /prompt-research status. Skip the preamble bash block.
+
+Run the "Corpus Status Check" bash block from the SKILL.md. Use ${researchCorpusDir} as the corpus directory instead of ~/.gstack/prompt-research.
+
+Here is the adapted command:
+mkdir -p ${researchCorpusDir}/{experiments,findings,constitution,hypotheses,literature,deploy-logs}
+_EXP_COUNT=$(ls ${researchCorpusDir}/experiments/*.json 2>/dev/null | wc -l | tr -d ' ')
+_FIND_COUNT=$(ls ${researchCorpusDir}/findings/*.json 2>/dev/null | wc -l | tr -d ' ')
+_CONST_COUNT=$(ls ${researchCorpusDir}/constitution/*.md 2>/dev/null | wc -l | tr -d ' ')
+_HYP_COUNT=$(ls ${researchCorpusDir}/hypotheses/*.json 2>/dev/null | wc -l | tr -d ' ')
+_DEPLOY_COUNT=$(ls ${researchCorpusDir}/deploy-logs/*.json 2>/dev/null | wc -l | tr -d ' ')
+echo "CORPUS: experiments=$_EXP_COUNT findings=$_FIND_COUNT constitution=$_CONST_COUNT hypotheses_queued=$_HYP_COUNT deployments=$_DEPLOY_COUNT"
+
+This is "status" mode — report the corpus status and stop. Do NOT enter any other mode (scout/experiment/distill/deploy). Skip any AskUserQuestion calls.`,
+      workingDirectory: researchDir,
+      maxTurns: 5,
+      timeout: 60_000,
+      testName: 'prompt-research-status',
+      runId,
+    });
+
+    logCost('/prompt-research status', result);
+
+    const output = result.output || '';
+    // Status mode should report corpus counts (all zeros for fresh corpus)
+    const hasCorpusReport = output.includes('CORPUS') ||
+      output.includes('experiment') ||
+      output.includes('finding') ||
+      (output.includes('0') && (output.includes('corpus') || output.includes('empty')));
+
+    recordE2E('/prompt-research status', 'Prompt Research E2E', result, {
+      passed: hasCorpusReport && result.exitReason === 'success',
+    });
+
+    expect(result.exitReason).toBe('success');
+    expect(hasCorpusReport).toBe(true);
+  }, 90_000);
+
+  testIfSelected('prompt-research-bootstrap', async () => {
+    // Fresh corpus (all subdirectories empty) should trigger bootstrap detection
+    const bootstrapDir = path.join(researchDir, '.gstack-bootstrap', 'prompt-research');
+    fs.mkdirSync(bootstrapDir, { recursive: true });
+
+    const result = await runSkillTest({
+      prompt: `Read prompt-research/SKILL.md for the skill workflow.
+
+You are running /prompt-research (no subcommand). Skip the preamble bash block.
+
+Run the corpus status check using this corpus directory: ${bootstrapDir}
+
+mkdir -p ${bootstrapDir}/{experiments,findings,constitution,hypotheses,literature,deploy-logs}
+_EXP_COUNT=$(ls ${bootstrapDir}/experiments/*.json 2>/dev/null | wc -l | tr -d ' ')
+_FIND_COUNT=$(ls ${bootstrapDir}/findings/*.json 2>/dev/null | wc -l | tr -d ' ')
+_CONST_COUNT=$(ls ${bootstrapDir}/constitution/*.md 2>/dev/null | wc -l | tr -d ' ')
+_HYP_COUNT=$(ls ${bootstrapDir}/hypotheses/*.json 2>/dev/null | wc -l | tr -d ' ')
+_DEPLOY_COUNT=$(ls ${bootstrapDir}/deploy-logs/*.json 2>/dev/null | wc -l | tr -d ' ')
+echo "CORPUS: experiments=$_EXP_COUNT findings=$_FIND_COUNT constitution=$_CONST_COUNT hypotheses_queued=$_HYP_COUNT deployments=$_DEPLOY_COUNT"
+
+After running the status check, the SKILL.md says: "If all counts are 0, this is a fresh corpus — offer bootstrap (see State Bootstrap section at the end)."
+
+Since all counts will be 0, you should detect this as a fresh corpus and mention the bootstrap option. Skip AskUserQuestion calls — just report what you would ask the user (import from Prompt Alchemy or start fresh). Write your response to stdout.`,
+      workingDirectory: researchDir,
+      maxTurns: 8,
+      timeout: 90_000,
+      testName: 'prompt-research-bootstrap',
+      runId,
+    });
+
+    logCost('/prompt-research bootstrap', result);
+
+    const output = result.output || '';
+    // Bootstrap detection should mention import or fresh start
+    const detectsEmptyCorpus = output.toLowerCase().includes('empty') ||
+      output.toLowerCase().includes('fresh') ||
+      output.toLowerCase().includes('bootstrap') ||
+      output.toLowerCase().includes('import') ||
+      output.toLowerCase().includes('all zeros') ||
+      output.toLowerCase().includes('0 experiment');
+
+    recordE2E('/prompt-research bootstrap', 'Prompt Research E2E', result, {
+      passed: detectsEmptyCorpus && ['success', 'error_max_turns'].includes(result.exitReason),
+    });
+
+    expect(['success', 'error_max_turns']).toContain(result.exitReason);
+    expect(detectsEmptyCorpus).toBe(true);
+  }, 120_000);
+
+  testIfSelected('prompt-research-scout', async () => {
+    // Pre-populate the corpus with some findings and experiments so scout has data to work with
+    const scoutCorpusDir = path.join(researchDir, '.gstack-scout', 'prompt-research');
+    fs.mkdirSync(path.join(scoutCorpusDir, 'experiments'), { recursive: true });
+    fs.mkdirSync(path.join(scoutCorpusDir, 'findings'), { recursive: true });
+    fs.mkdirSync(path.join(scoutCorpusDir, 'constitution'), { recursive: true });
+    fs.mkdirSync(path.join(scoutCorpusDir, 'hypotheses'), { recursive: true });
+    fs.mkdirSync(path.join(scoutCorpusDir, 'literature'), { recursive: true });
+    fs.mkdirSync(path.join(scoutCorpusDir, 'deploy-logs'), { recursive: true });
+
+    // Write a sample experiment
+    fs.writeFileSync(path.join(scoutCorpusDir, 'experiments', 'EXP-001.json'), JSON.stringify({
+      id: 'EXP-001',
+      hypothesis_id: 'H-001',
+      literature_ref: 'M-001',
+      mechanism: 'motivation',
+      date: '2026-03-10',
+      design: {
+        iv: 'mission framing presence',
+        dv_primary: 'reasoning depth (1-10)',
+        groups: [
+          { name: 'baseline', prompt: 'Explain quantum entanglement' },
+          { name: 'treatment_a', prompt: 'You are an expert physicist on a mission to make quantum mechanics accessible. Explain quantum entanglement' },
+        ],
+      },
+      results: {
+        baseline: { mean: { depth: 5.5 } },
+        treatment_a: { mean: { depth: 7.0 } },
+      },
+      conclusion: 'Mission framing +27% on reasoning depth.',
+      status: 'completed',
+    }, null, 2));
+
+    // Write a sample finding (L1)
+    fs.writeFileSync(path.join(scoutCorpusDir, 'findings', 'F-001.json'), JSON.stringify({
+      id: 'F-001',
+      level: 1,
+      rule: 'Add mission framing to activate deeper reasoning in explanatory tasks.',
+      mechanism: 'motivation',
+      evidence: ['EXP-001 (+27%)'],
+      applies_to: ['reasoning', 'explanation'],
+      does_not_apply_to: ['code generation'],
+      limitations: ['n=2 per group', 'Claude-only'],
+      date_created: '2026-03-10',
+    }, null, 2));
+
+    const result = await runSkillTest({
+      prompt: `Read prompt-research/SKILL.md for the skill workflow.
+
+You are running /prompt-research scout. Skip the preamble bash block.
+
+Use ${scoutCorpusDir} as the corpus directory instead of ~/.gstack/prompt-research.
+
+Step 1: Run corpus status check:
+_EXP_COUNT=$(ls ${scoutCorpusDir}/experiments/*.json 2>/dev/null | wc -l | tr -d ' ')
+_FIND_COUNT=$(ls ${scoutCorpusDir}/findings/*.json 2>/dev/null | wc -l | tr -d ' ')
+echo "CORPUS: experiments=$_EXP_COUNT findings=$_FIND_COUNT"
+
+Step 2: Follow Mode SCOUT — load findings and experiments:
+cat ${scoutCorpusDir}/findings/*.json 2>/dev/null
+cat ${scoutCorpusDir}/experiments/*.json 2>/dev/null
+
+Step 3: Generate hypothesis candidates as described in S1.3. Skip the literature scan (S1.2). Skip AskUserQuestion calls — generate the hypothesis candidates and write them to stdout.
+
+Focus on identifying gaps: what mechanisms haven't been tested? What L1 findings could be upgraded with cross-model replication? What cross-method interactions are untested?`,
+      workingDirectory: researchDir,
+      maxTurns: 10,
+      timeout: 120_000,
+      testName: 'prompt-research-scout',
+      runId,
+    });
+
+    logCost('/prompt-research scout', result);
+
+    const output = result.output || '';
+    // Scout should generate hypothesis candidates
+    const hasHypotheses = output.includes('H-') ||
+      output.toLowerCase().includes('hypothesis') ||
+      output.toLowerCase().includes('hypothes');
+    // Should reference the existing finding or experiment data
+    const referencesExisting = output.includes('F-001') ||
+      output.includes('EXP-001') ||
+      output.toLowerCase().includes('motivation') ||
+      output.toLowerCase().includes('mission framing');
+    // Should identify gaps or opportunities
+    const identifiesGaps = output.toLowerCase().includes('gap') ||
+      output.toLowerCase().includes('untested') ||
+      output.toLowerCase().includes('anchoring') ||
+      output.toLowerCase().includes('representation') ||
+      output.toLowerCase().includes('cross-model') ||
+      output.toLowerCase().includes('replicate');
+
+    recordE2E('/prompt-research scout', 'Prompt Research E2E', result, {
+      passed: hasHypotheses && (referencesExisting || identifiesGaps) && ['success', 'error_max_turns'].includes(result.exitReason),
+    });
+
+    expect(['success', 'error_max_turns']).toContain(result.exitReason);
+    expect(hasHypotheses).toBe(true);
+    // Scout should either reference existing data or identify mechanism gaps
+    expect(referencesExisting || identifiesGaps).toBe(true);
+  }, 180_000);
+});
+
 // Module-level afterAll — finalize eval collector after all tests complete
 afterAll(async () => {
   if (evalCollector) {

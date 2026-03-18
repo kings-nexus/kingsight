@@ -90,6 +90,11 @@ export const E2E_TOUCHFILES: Record<string, string[]> = {
 
   // gstack-upgrade
   'gstack-upgrade-happy-path': ['gstack-upgrade/**'],
+
+  // Prompt Research
+  'prompt-research-status':    ['prompt-research/**'],
+  'prompt-research-scout':     ['prompt-research/**'],
+  'prompt-research-bootstrap': ['prompt-research/**'],
 };
 
 /**
