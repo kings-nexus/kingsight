@@ -35,6 +35,25 @@ A new agent role that discovers which prompt techniques work, why they work, and
 2. **Motivation Activation** — emotion/identity/mission activate higher investment
 3. **Representation Shift** — style/structure/framework shift output patterns
 
+### /secretary — Routing Hub (Entry Point)
+
+The secretary is the main entry point. It classifies every user message and routes to the correct agent. It does NOT make decisions — only forwards and fact-finds.
+
+**ABCDL classification:**
+
+| Category | Intent | Routes to |
+|----------|--------|-----------|
+| **A** | Exploration/thinking ("I think...", "what if...") | prompt-research scout |
+| **B** | Execution ("run experiment", "write a prompt") | prompt-research or prompt-writer |
+| **C** | Query ("what is F-003", "show status") | Secretary answers directly |
+| **D** | Continue ("next step", "approve") | Resume active pipeline |
+| **L** | Learning ("teach me...", "I don't understand...") | Education system |
+
+- Fuzzy/ambiguous messages default to **A** (think before act)
+- Preview gate on A/B/L routes — shows routing plan, waits for confirmation
+- Session journaling in JSONL for cross-session continuity
+- TDL tier gate with fail-open (never blocks the user)
+
 ### /stack — Call Stack Visibility
 
 See where you are in the project, what's done, what's next. Persistent across sessions at `~/.gstack/projects/$SLUG/callstack.md`.
@@ -84,20 +103,35 @@ This project takes **design ideas** from gstack and ECC, not runtime dependencie
 
 **Rule: Agent team work always uses subagent.** Never require API keys for development or testing.
 
+### ABCDL message classification
+
+Every user message is classified before routing (ADR-004):
+- **A** (exploration) and **B** (execution) are the key distinction — "thinking vs doing"
+- **C** (query) and **D** (continue) are lightweight — no agent dispatch needed
+- **L** (learning) routes to the education system — the project's core entry point
+- Fuzzy defaults to A: over-think rather than over-execute
+
 ### One agent, one task
 
-Each agent role does exactly one thing. The prompt researcher researches — it doesn't write prompts (that's a future prompt-writer role). The stack viewer shows state — it doesn't manage tasks.
+Each agent role does exactly one thing. The secretary routes, the researcher researches, the writer writes. The secretary never writes files. The researcher never routes messages.
+
+### Knowledge governance
+
+Architecture decisions recorded as ADRs. Design principles accumulated via KC-1~4 criteria. Deferred items tracked with observable trigger conditions. See `docs/governance/`.
 
 ## Roadmap
 
 | Phase | What | Status |
 |-------|------|--------|
-| 1 | Education system (core entry point — learn before you use) | Planned |
+| 1 | /secretary (ABCDL routing hub) | Done |
 | 2 | /prompt-research (research tool) | Done |
-| 3 | /prompt-writer (apply research findings) | Planned |
-| 4 | Continuous learning (self-evolution from practice) | Planned |
-| 5 | Multi-session coordination (5-layer system) | Designed, not built |
-| 6 | Independent project scaffold | Planned |
+| 3 | /stack (call stack visibility) | Done |
+| 4 | Knowledge governance (ADR + DP + DF + KC) | Done |
+| 5 | Education system (core entry point — learn before you use) | Planned |
+| 6 | /prompt-writer (apply research findings) | Planned |
+| 7 | Continuous learning (self-evolution from practice) | Planned |
+| 8 | Multi-session coordination (5-layer system) | Designed, not built |
+| 9 | Independent project scaffold | Planned |
 
 ## For contributors
 
@@ -113,12 +147,19 @@ bun run skill:check      # health dashboard
 ### Project structure (new skills)
 
 ```
+secretary/               # /secretary routing hub (entry point)
+  SKILL.md.tmpl
+  SKILL.md
 prompt-research/         # /prompt-research agent
   SKILL.md.tmpl          # template source (edit this)
   SKILL.md               # generated (don't edit)
 stack/                   # /stack visibility tool
   SKILL.md.tmpl
   SKILL.md
+docs/governance/         # ADR, DP, DF, KC frameworks
+  ADR.md
+  DP.md
+  DF.md
 subproject/              # reference repos (.gitignored)
   everything-claude-code/
   prompt_alchemy_reference.md
