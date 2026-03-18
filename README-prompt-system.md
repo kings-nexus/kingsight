@@ -37,13 +37,33 @@ A new agent role that discovers which prompt techniques work, why they work, and
 
 ### /stack — Call Stack Visibility
 
-See where you are in the project, what's done, what's next. Persistent across sessions.
+See where you are in the project, what's done, what's next. Persistent across sessions at `~/.gstack/projects/$SLUG/callstack.md`.
 
 ```
-/stack          # view current position
-/stack init     # create a new call stack
-/stack update   # mark progress, move position
+/stack          # view current call stack + highlight current position and next action
+/stack init     # create a new call stack interactively
+/stack update   # mark items done, add new items, move current position
+/stack status   # same as /stack (just show the map)
 ```
+
+The call stack is a simple markdown file with checkbox format:
+
+```markdown
+# Call Stack: My Project
+Updated: 2026-03-18
+
+- [x] 1. Completed task
+- [ ] 2. In progress group  ← HERE
+  - [x] 2.1 Done subtask
+  - [ ] 2.2 Current subtask
+  - [ ] 2.3 Pending subtask
+- [ ] 3. Future task
+```
+
+- `[x]` = done, `[ ]` = not done
+- `← HERE` marks your current position (one at a time)
+- Open in any session, run `/stack` to see where you left off
+- Run `/stack update` to tell the agent what you finished — it updates the file
 
 ## Architecture decisions
 
