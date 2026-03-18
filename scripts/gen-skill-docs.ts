@@ -1156,6 +1156,7 @@ function findTemplates(): string[] {
     path.join(ROOT, 'design-consultation', 'SKILL.md.tmpl'),
     path.join(ROOT, 'document-release', 'SKILL.md.tmpl'),
     path.join(ROOT, 'prompt-research', 'SKILL.md.tmpl'),
+    path.join(ROOT, 'secretary', 'SKILL.md.tmpl'),
     path.join(ROOT, 'stack', 'SKILL.md.tmpl'),
   ];
   for (const p of candidates) {

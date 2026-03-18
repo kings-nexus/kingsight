@@ -33,6 +33,7 @@ const SKILL_FILES = [
   'document-release/SKILL.md',
   'prompt-research/SKILL.md',
   'stack/SKILL.md',
+  'secretary/SKILL.md',
 ].filter(f => fs.existsSync(path.join(ROOT, f)));
 
 let hasErrors = false;
