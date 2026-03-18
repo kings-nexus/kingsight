@@ -59,10 +59,10 @@ The secretary is the main entry point. It classifies every user message and rout
 See where you are in the project, what's done, what's next. Persistent across sessions at `~/.gstack/projects/$SLUG/callstack.md`.
 
 ```
-/stack          # view current call stack + highlight current position and next action
+/stack          # full view — every line, nothing folded
+/stack brief    # compact view — fold completed, expand current + pending
 /stack init     # create a new call stack interactively
 /stack update   # mark items done, add new items, move current position
-/stack status   # same as /stack (just show the map)
 ```
 
 The call stack is a simple markdown file with checkbox format:
