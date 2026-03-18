@@ -24,4 +24,12 @@
 
 ## 当前延迟项
 
-（暂无。随项目推进，被否决但有价值的提案会记录在此。）
+### DF-001: Continuous Learning 自动化（Hook 观察 + 背景分析）
+- **来源**: ECC continuous-learning-v2 设计评估
+- **原始提案摘要**: 通过 PreToolUse/PostToolUse hook 自动捕获每次交互，背景 Haiku agent 提取模式为 instinct，置信度驱动自动升级
+- **否决理由**: 当前 3 个 skill、0 个用户，没有足够交互数据，手动 distill 完全够用
+- **有价值遗产**: 架构设计可参考 ECC v2.1（项目隔离、置信度评分、进化管线）。当前手动流程（secretary 日志 + prompt-research distill）是未来自动化的数据基础
+- **触发条件**: 用户数 >= 5 或 secretary 日志条目 >= 100 条（表明有足够数据密度值得自动分析）
+- **检查责任**: 人类手动
+- **检查方法**: `wc -l ~/.gstack/projects/$SLUG/secretary-journal.jsonl`
+- **状态**: 🔍 监控中
