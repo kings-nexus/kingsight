@@ -1184,6 +1184,39 @@ for (const tmplPath of findTemplates()) {
   }
 }
 
+// ─── Post-generation: create missing skill symlinks ─────────
+// Only when running inside a .claude/skills/ directory (same guard as setup script)
+
+if (!DRY_RUN) {
+  const skillsDir = path.dirname(ROOT); // parent of gstack/
+  if (path.basename(skillsDir) === 'skills') {
+    const linked: string[] = [];
+    const entries = fs.readdirSync(ROOT, { withFileTypes: true });
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue;
+      if (entry.name === 'node_modules') continue;
+      const skillMd = path.join(ROOT, entry.name, 'SKILL.md');
+      if (!fs.existsSync(skillMd)) continue;
+
+      const target = path.join(skillsDir, entry.name);
+      // Only create symlink if nothing exists at the target path.
+      // If a symlink or real file/directory already exists, skip it.
+      // This matches the "new skill" use case without touching existing links.
+      let targetStat: fs.Stats | undefined;
+      try { targetStat = fs.lstatSync(target); } catch {}
+      if (!targetStat) {
+        fs.symlinkSync(`gstack/${entry.name}`, target);
+        linked.push(entry.name);
+      }
+    }
+    if (linked.length > 0) {
+      for (const name of linked) {
+        console.log(`LINKED: ${name}`);
+      }
+    }
+  }
+}
+
 if (DRY_RUN && hasChanges) {
   console.error('\nGenerated SKILL.md files are stale. Run: bun run gen:skill-docs');
   process.exit(1);

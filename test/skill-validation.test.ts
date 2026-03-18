@@ -1007,6 +1007,63 @@ describe('Retro test health tracking', () => {
 
 // --- QA report template regression tests section ---
 
+// --- Skill discoverability verification ---
+
+describe('Skill discoverability', () => {
+  // Dynamically find all directories containing a SKILL.md
+  const skillDirs = fs.readdirSync(ROOT, { withFileTypes: true })
+    .filter(d => d.isDirectory())
+    .filter(d => fs.existsSync(path.join(ROOT, d.name, 'SKILL.md')))
+    .map(d => d.name);
+
+  // Also include root SKILL.md
+  const allSkillPaths = [
+    { dir: '.', file: path.join(ROOT, 'SKILL.md') },
+    ...skillDirs.map(d => ({ dir: d, file: path.join(ROOT, d, 'SKILL.md') })),
+  ];
+
+  test('found at least 10 skill directories', () => {
+    // Sanity check: we know there are many skills
+    expect(allSkillPaths.length).toBeGreaterThanOrEqual(10);
+  });
+
+  for (const { dir, file } of allSkillPaths) {
+    test(`${dir}/SKILL.md has valid YAML frontmatter with name field`, () => {
+      const content = fs.readFileSync(file, 'utf-8');
+      // Must start with ---
+      expect(content.startsWith('---')).toBe(true);
+      // Must have closing ---
+      const closingIdx = content.indexOf('---', 3);
+      expect(closingIdx).toBeGreaterThan(3);
+      // Extract frontmatter and check for name field
+      const frontmatter = content.slice(3, closingIdx);
+      const nameMatch = frontmatter.match(/^name:\s*(.+)$/m);
+      expect(nameMatch).not.toBeNull();
+      expect(nameMatch![1].trim().length).toBeGreaterThan(0);
+    });
+
+    test(`${dir}/SKILL.md name field matches directory name`, () => {
+      const content = fs.readFileSync(file, 'utf-8');
+      const closingIdx = content.indexOf('---', 3);
+      const frontmatter = content.slice(3, closingIdx);
+      const nameMatch = frontmatter.match(/^name:\s*(.+)$/m);
+      const skillName = nameMatch![1].trim();
+      if (dir === '.') {
+        // Root SKILL.md: name is the project name, just verify it exists
+        expect(skillName.length).toBeGreaterThan(0);
+      } else {
+        expect(skillName).toBe(dir);
+      }
+    });
+
+    test(`${dir}/SKILL.md is not empty`, () => {
+      const content = fs.readFileSync(file, 'utf-8');
+      // At minimum: frontmatter + some content
+      expect(content.length).toBeGreaterThan(50);
+    });
+  }
+});
+
 describe('QA report template', () => {
   test('qa-report-template.md has Regression Tests section', () => {
     const content = fs.readFileSync(path.join(ROOT, 'qa', 'templates', 'qa-report-template.md'), 'utf-8');
