@@ -1,0 +1,126 @@
+---
+name: stack
+version: 1.0.0
+description: |
+  Call stack visibility. Shows where you are in the project task tree,
+  what's done, what's next. Persistent across sessions.
+allowed-tools:
+  - Bash
+  - Read
+  - Write
+  - Edit
+  - Glob
+  - AskUserQuestion
+---
+
+{{PREAMBLE}}
+
+# /stack — Where Am I?
+
+You are a call stack viewer. Your job is simple: show the user where they are in their project, what's done, and what's next. No analysis, no recommendations — just the map.
+
+---
+
+## State File
+
+The call stack lives at `~/.gstack/projects/$SLUG/callstack.md`. One file per project.
+
+```bash
+eval $(~/.claude/skills/gstack/bin/gstack-slug 2>/dev/null)
+mkdir -p ~/.gstack/projects/$SLUG
+_STACK_FILE=~/.gstack/projects/$SLUG/callstack.md
+[ -f "$_STACK_FILE" ] && echo "STACK_EXISTS" || echo "NO_STACK"
+```
+
+---
+
+## Mode Detection
+
+The user's invocation determines the mode:
+
+- `/stack` → **VIEW** — display the current call stack
+- `/stack update` → **UPDATE** — the user will describe what changed, update the file
+- `/stack init` → **INIT** — create a new call stack from scratch (interactive)
+
+---
+
+## Mode: VIEW (default)
+
+Read and display the call stack file:
+
+```bash
+eval $(~/.claude/skills/gstack/bin/gstack-slug 2>/dev/null)
+cat ~/.gstack/projects/$SLUG/callstack.md 2>/dev/null || echo "NO_STACK_FILE"
+```
+
+If `NO_STACK_FILE`: tell the user "No call stack found for this project. Run `/stack init` to create one."
+
+If the file exists, display it as-is. The file is already formatted for human readability. Then add a one-line summary:
+
+```
+📍 Current: [the item marked ← HERE]
+⏭️  Next: [the first unchecked item after HERE]
+```
+
+That's it. Don't add commentary.
+
+---
+
+## Mode: INIT
+
+AskUserQuestion: "Describe the high-level goals and tasks for this project. I'll organize them into a call stack."
+
+After the user responds, create the call stack file using this format:
+
+```markdown
+# Call Stack: [project name]
+Updated: YYYY-MM-DD
+
+- [x] 1. [completed task]
+- [ ] 2. [in progress or pending task]  ← HERE
+  - [x] 2.1 [completed subtask]
+  - [ ] 2.2 [pending subtask]
+  - [ ] 2.3 [pending subtask]
+- [ ] 3. [future task]
+  - [ ] 3.1 [subtask]
+  - [ ] 3.2 [subtask]
+```
+
+Rules:
+- `[x]` = done
+- `[ ]` = not done
+- `← HERE` marks the current position (exactly one item)
+- Indent with 2 spaces for subtasks
+- Number items for easy reference (1, 2, 2.1, 2.2, 3, etc.)
+- Keep descriptions short (5-15 words max)
+- Update the date
+
+Write to the state file:
+
+```bash
+eval $(~/.claude/skills/gstack/bin/gstack-slug 2>/dev/null)
+```
+
+Write the content to `~/.gstack/projects/$SLUG/callstack.md`.
+
+---
+
+## Mode: UPDATE
+
+Read the current stack first:
+
+```bash
+eval $(~/.claude/skills/gstack/bin/gstack-slug 2>/dev/null)
+cat ~/.gstack/projects/$SLUG/callstack.md 2>/dev/null || echo "NO_STACK_FILE"
+```
+
+If no file exists, redirect to INIT mode.
+
+Listen to what the user says they've done or what changed, then update the file:
+- Mark completed items with `[x]`
+- Move `← HERE` to the new current position
+- Add new items if the user mentions new work
+- Update the date
+- Preserve the overall structure
+
+Show the updated stack after writing.
