@@ -1087,6 +1087,76 @@ Only commit if there are changes. Stage all bootstrap files (config, test direct
 ---`;
 }
 
+function generateTaskgraphCore(): string {
+  return `## Task Graph State Schema
+
+\`\`\`yaml
+# taskgraph.yaml format (version 2)
+meta:
+  project: string       # project name
+  updated: date         # last update ISO date
+  format: 2             # schema version
+  head: string          # last completed task ID
+
+themes:
+  [key]:
+    label: string       # display name for the theme group
+
+tasks:
+  [id]:                 # string ID (e.g., "2.13")
+    title: string       # 5-15 words
+    theme: string       # key from themes (optional)
+    status: done | pending | in_progress | skipped
+    blockedBy: [string] # list of task IDs this depends on (optional, empty = root task)
+
+deviations: []          # append-only log of out-of-order completions
+  # Each entry: { task: id, unmetDeps: [ids], reason: string, timestamp: ISO }
+\`\`\`
+
+## NEXT Calculation Protocol
+
+\`\`\`
+NEXT calculation (run every time, never store):
+For each task where status = "pending":
+  Check every ID in blockedBy
+  If ALL blockedBy tasks have status "done" → task is AVAILABLE
+Return all AVAILABLE tasks
+
+HEAD = meta.head (the most recently completed task)
+NEXT = computed available frontier (may be multiple tasks if parallel paths exist)
+\`\`\`
+
+## Deviation Detection Protocol
+
+\`\`\`
+When marking task X as done or in_progress:
+1. Read X's blockedBy list
+2. Check each dependency's status
+3. If ANY dependency is NOT "done":
+   → DEVIATION DETECTED
+   → Show: which dependencies are unmet
+   → AskUserQuestion with options:
+     A) Proceed anyway (record deviation with reason)
+     B) Mark prerequisites done too
+     C) Cancel — work on prerequisites first
+   → If A: append to deviations array, update task status
+   → This is advisory (ADR-005), never blocking
+
+Deviation record format:
+  task: "X"
+  unmetDeps: ["dep1", "dep2"]
+  reason: "user's stated reason"
+  timestamp: "ISO-8601"
+\`\`\`
+
+## State File Location
+
+\`\`\`
+State file: ~/.gstack/projects/$SLUG/taskgraph.yaml
+Legacy file: ~/.gstack/projects/$SLUG/callstack.md (migration source)
+\`\`\``;
+}
+
 const RESOLVERS: Record<string, () => string> = {
   COMMAND_REFERENCE: generateCommandReference,
   SNAPSHOT_FLAGS: generateSnapshotFlags,
@@ -1098,6 +1168,7 @@ const RESOLVERS: Record<string, () => string> = {
   DESIGN_REVIEW_LITE: generateDesignReviewLite,
   REVIEW_DASHBOARD: generateReviewDashboard,
   TEST_BOOTSTRAP: generateTestBootstrap,
+  TASKGRAPH_CORE: generateTaskgraphCore,
 };
 
 // ─── Template Processing ────────────────────────────────────
