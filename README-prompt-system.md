@@ -59,30 +59,30 @@ The secretary is the main entry point. It classifies every user message and rout
 See where you are in the project, what's done, what's next. Persistent across sessions at `~/.gstack/projects/$SLUG/callstack.md`.
 
 ```
-/stack          # full view — every line, nothing folded
-/stack brief    # compact view — fold completed, expand current + pending
-/stack init     # create a new call stack interactively
-/stack update   # mark items done, add new items, move current position
+/stack          # full view — grouped by theme, dependency indicators
+/stack brief    # compact — fold completed themes, show frontier + blocked
+/stack next     # show tasks whose prerequisites are all met
+/stack update   # mark done + deviation detection + auto-unblock
+/stack init     # create new graph (or migrate from old callstack.md)
+/stack add      # add task with dependencies
+/stack graph    # ASCII dependency visualization (experimental)
 ```
 
-The call stack is a simple markdown file with checkbox format:
+State is a YAML DAG (`taskgraph.yaml`) with dependency tracking:
 
-```markdown
-# Call Stack: My Project
-Updated: 2026-03-18
-
-- [x] 1. Completed task
-- [ ] 2. In progress group  ← HERE
-  - [x] 2.1 Done subtask
-  - [ ] 2.2 Current subtask
-  - [ ] 2.3 Pending subtask
-- [ ] 3. Future task
+```yaml
+tasks:
+  "2.14":
+    title: "验证秘书分类"
+    status: pending
+    blockedBy: ["2.13"]    # dependency
+    theme: agents           # grouping
 ```
 
-- `[x]` = done, `[ ]` = not done
-- `← HERE` marks your current position (one at a time)
-- Open in any session, run `/stack` to see where you left off
-- Run `/stack update` to tell the agent what you finished — it updates the file
+- **HEAD** = last completed task. **NEXT** = computed frontier (all deps met)
+- **Deviation detection**: skip a prerequisite → system asks why (ADR-005 advisory, not blocking)
+- **Themes**: tasks grouped by domain (infrastructure, agents, governance, education)
+- Shares infrastructure with future education system via `{{TASKGRAPH_CORE}}`
 
 ## Architecture decisions
 
