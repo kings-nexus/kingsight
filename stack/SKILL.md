@@ -1,9 +1,10 @@
 ---
 name: stack
-version: 1.0.0
+version: 2.0.0
 description: |
-  Call stack visibility. Shows where you are in the project task tree,
-  what's done, what's next. Persistent across sessions.
+  DAG-based task graph with dependency tracking and deviation detection.
+  Shows where you are in the project, what's done, what's available next,
+  and warns when you skip ahead of unmet dependencies (advisory, never blocking).
 allowed-tools:
   - Bash
   - Read
@@ -119,22 +120,101 @@ Hey gstack team — ran into this while using /{skill-name}:
 
 Slug: lowercase, hyphens, max 60 chars (e.g. `browse-js-no-await`). Skip if file already exists. Max 3 reports per session. File inline and continue — don't stop the workflow. Tell user: "Filed gstack field report: {title}"
 
-# /stack — Where Am I?
+# /stack — Task Graph with Dependency Tracking
 
-You are a call stack viewer. Your job is simple: show the user where they are in their project, what's done, and what's next. No analysis, no recommendations — just the map.
+You are a task graph viewer and deviation advisor. Your job: show the user where they are in their project as a dependency-aware task graph, compute what's available next, and flag when tasks are completed out of dependency order. You advise but never block — deviations are recorded, not prevented (ADR-005).
+
+## Task Graph State Schema
+
+```yaml
+# taskgraph.yaml format (version 2)
+meta:
+  project: string       # project name
+  updated: date         # last update ISO date
+  format: 2             # schema version
+  head: string          # last completed task ID
+
+themes:
+  [key]:
+    label: string       # display name for the theme group
+
+tasks:
+  [id]:                 # string ID (e.g., "2.13")
+    title: string       # 5-15 words
+    theme: string       # key from themes (optional)
+    status: done | pending | in_progress | skipped
+    blockedBy: [string] # list of task IDs this depends on (optional, empty = root task)
+
+deviations: []          # append-only log of out-of-order completions
+  # Each entry: { task: id, unmetDeps: [ids], reason: string, timestamp: ISO }
+```
+
+## NEXT Calculation Protocol
+
+```
+NEXT calculation (run every time, never store):
+For each task where status = "pending":
+  Check every ID in blockedBy
+  If ALL blockedBy tasks have status "done" → task is AVAILABLE
+Return all AVAILABLE tasks
+
+HEAD = meta.head (the most recently completed task)
+NEXT = computed available frontier (may be multiple tasks if parallel paths exist)
+```
+
+## Deviation Detection Protocol
+
+```
+When marking task X as done or in_progress:
+1. Read X's blockedBy list
+2. Check each dependency's status
+3. If ANY dependency is NOT "done":
+   → DEVIATION DETECTED
+   → Show: which dependencies are unmet
+   → AskUserQuestion with options:
+     A) Proceed anyway (record deviation with reason)
+     B) Mark prerequisites done too
+     C) Cancel — work on prerequisites first
+   → If A: append to deviations array, update task status
+   → This is advisory (ADR-005), never blocking
+
+Deviation record format:
+  task: "X"
+  unmetDeps: ["dep1", "dep2"]
+  reason: "user's stated reason"
+  timestamp: "ISO-8601"
+```
+
+## State File Location
+
+```
+State file: ~/.gstack/projects/$SLUG/taskgraph.yaml
+Legacy file: ~/.gstack/projects/$SLUG/callstack.md (migration source)
+```
 
 ---
 
 ## State File
 
-The call stack lives at `~/.gstack/projects/$SLUG/callstack.md`. One file per project.
+The task graph lives at `~/.gstack/projects/$SLUG/taskgraph.yaml`. One file per project.
 
 ```bash
 eval $(~/.claude/skills/gstack/bin/gstack-slug 2>/dev/null)
 mkdir -p ~/.gstack/projects/$SLUG
-_STACK_FILE=~/.gstack/projects/$SLUG/callstack.md
-[ -f "$_STACK_FILE" ] && echo "STACK_EXISTS" || echo "NO_STACK"
+_TG_FILE=~/.gstack/projects/$SLUG/taskgraph.yaml
+_OLD_FILE=~/.gstack/projects/$SLUG/callstack.md
+if [ -f "$_TG_FILE" ]; then
+  echo "TASKGRAPH_EXISTS"
+elif [ -f "$_OLD_FILE" ]; then
+  echo "OLD_CALLSTACK_EXISTS"
+else
+  echo "NO_STATE_FILE"
+fi
 ```
+
+If `OLD_CALLSTACK_EXISTS` and the user is not in INIT mode: tell them "Found a legacy callstack.md. Run `/stack init` to migrate it to the new task graph format."
+
+If `NO_STATE_FILE` and the user is not in INIT mode: tell them "No task graph found for this project. Run `/stack init` to create one."
 
 ---
 
@@ -142,103 +222,280 @@ _STACK_FILE=~/.gstack/projects/$SLUG/callstack.md
 
 The user's invocation determines the mode:
 
-- `/stack` → **VIEW** — display the full call stack (file as-is, nothing folded)
-- `/stack brief` → **BRIEF** — compact view: fold completed items, expand current + pending
-- `/stack update` → **UPDATE** — the user will describe what changed, update the file
-- `/stack init` → **INIT** — create a new call stack from scratch (interactive)
+- `/stack` → **VIEW** — display the full task graph grouped by theme
+- `/stack brief` → **BRIEF** — compact view: fold completed themes, show frontier
+- `/stack update` → **UPDATE** — user describes what changed, with deviation detection
+- `/stack init` → **INIT** — create a new task graph or migrate from callstack.md
+- `/stack next` → **NEXT** — show only the available frontier (tasks with all deps met)
+- `/stack add` → **ADD** — add a new task interactively
+- `/stack graph` → **GRAPH** — show ASCII dependency graph (experimental)
 
 ---
 
 ## Mode: VIEW (default)
 
-Read and display the call stack file:
+Read the task graph file using the Read tool:
 
 ```bash
 eval $(~/.claude/skills/gstack/bin/gstack-slug 2>/dev/null)
-cat ~/.gstack/projects/$SLUG/callstack.md 2>/dev/null || echo "NO_STACK_FILE"
+echo ~/.gstack/projects/$SLUG/taskgraph.yaml
 ```
 
-If `NO_STACK_FILE`: tell the user "No call stack found for this project. Run `/stack init` to create one."
+Read that file path with the Read tool. Parse the YAML content — Claude handles YAML natively. Then display the task graph with this format:
 
-If the file exists, display it **as-is** — every line, nothing folded, nothing summarized. The file is the source of truth. Then add a one-line summary:
+**Display format:**
+
+```
+# [project name from meta.project]
+HEAD: [meta.head] | NEXT: [computed available task IDs, comma-separated]
+
+## [Theme label] ([done count]/[total count] ✓ if all done)
+  [x] [id]  [title]
+  [x] [id]  [title]
+  [ ] [id]  [title] → needs: [dep1] ✓, [dep2] ✗
+  [ ] [id]  [title] → needs: [dep1] ✗
+
+## [Next theme label] ([done]/[total])
+  ...
+```
+
+**Rules for VIEW:**
+1. Group tasks by their `theme` field. Use the theme label from the `themes` map.
+2. Show ALL tasks — both completed and pending.
+3. For pending tasks with dependencies: show `→ needs:` followed by each dependency ID with ✓ (done) or ✗ (pending).
+4. For pending tasks with no `blockedBy` or empty `blockedBy`: show without dependency indicators (they are root tasks).
+5. Compute NEXT by finding all pending tasks whose `blockedBy` dependencies are ALL done. This is the available frontier.
+6. HEAD comes from `meta.head`.
+7. Sort themes in the order they appear in the `themes` map.
+8. Within each theme, sort tasks by ID (numeric/lexicographic).
+
+If deviations exist in the file, show a brief note after the graph:
+
+```
+⚠️ [N] deviation(s) recorded. Use `/stack update` to review.
+```
+
+That's it. Don't add commentary or recommendations.
 
 ---
 
 ## Mode: BRIEF (compact view)
 
-Read the same file as VIEW, but display a compact version:
+Read the task graph file the same way as VIEW. Then display a compact version:
 
-1. For completed top-level items (`- [x]`): show one line with the item text
-2. For completed sub-items under an incomplete parent: fold into a count — e.g., `  - [x] 2.1~2.13 done (13 items)`
-3. For the current item (`← HERE`) and all items after it: show in full, unfolded
-4. Always show the full summary line at the bottom
-
-This is a **display-only transformation** — never modify the actual file. The file always stores the full history.
+**Display format:**
 
 ```
-📍 Current: [the item marked ← HERE]
-⏭️  Next: [the first unchecked item after HERE]
+[project name] ([total done]/[total tasks] done)
+[theme1]: [done]/[total] ✓ | [theme2]: [done]/[total] | ...
+
+Available now:
+  [ ] [id]  [title]
+  [ ] [id]  [title]
+
+Blocked:
+  [ ] [id]  [title] (needs [unmet dep IDs])
+  [ ] [id]  [title] (needs [unmet dep IDs])
 ```
 
-That's it. Don't add commentary.
+**Rules for BRIEF:**
+1. The summary line shows all themes with their done/total counts. Append ✓ to fully completed themes.
+2. "Available now" lists the computed frontier — pending tasks with all dependencies met.
+3. "Blocked" lists pending tasks with at least one unmet dependency, showing which deps are unmet.
+4. Do NOT show individual completed tasks — they are folded into the theme counts.
+5. If there are no available tasks and no blocked tasks, say "All tasks complete!"
 
 ---
 
-## Mode: INIT
+## Mode: NEXT
 
-AskUserQuestion: "Describe the high-level goals and tasks for this project. I'll organize them into a call stack."
+Read the task graph file. Compute and display ONLY the available frontier:
 
-After the user responds, create the call stack file using this format:
+**Display format:**
 
-```markdown
-# Call Stack: [project name]
-Updated: YYYY-MM-DD
-
-- [x] 1. [completed task]
-- [ ] 2. [in progress or pending task]  ← HERE
-  - [x] 2.1 [completed subtask]
-  - [ ] 2.2 [pending subtask]
-  - [ ] 2.3 [pending subtask]
-- [ ] 3. [future task]
-  - [ ] 3.1 [subtask]
-  - [ ] 3.2 [subtask]
+```
+Available tasks (all dependencies met):
+  [ ] [id]  [title]
+  [ ] [id]  [title]
 ```
 
-Rules:
-- `[x]` = done
-- `[ ]` = not done
-- `← HERE` marks the current position (exactly one item)
-- Indent with 2 spaces for subtasks
-- Number items for easy reference (1, 2, 2.1, 2.2, 3, etc.)
-- Keep descriptions short (5-15 words max)
-- Update the date
+If no tasks are available (all done or all blocked), say so clearly:
+- All done: "All tasks complete! No pending work."
+- All blocked: "No tasks available — all pending tasks have unmet dependencies."
 
-Write to the state file:
-
-```bash
-eval $(~/.claude/skills/gstack/bin/gstack-slug 2>/dev/null)
-```
-
-Write the content to `~/.gstack/projects/$SLUG/callstack.md`.
+NEXT is always computed, never stored. The algorithm: for each task with `status: pending`, check if every ID in its `blockedBy` list has `status: done`. If yes (or if `blockedBy` is empty/missing), the task is available.
 
 ---
 
 ## Mode: UPDATE
 
-Read the current stack first:
+Read the current task graph file. If no file exists, redirect to INIT mode.
+
+Listen to what the user says they've done or what changed.
+
+**Before marking any task done, run deviation detection:**
+
+For the task the user wants to mark done, check its `blockedBy` list. If any dependency has `status: pending`, this is a deviation. Present the deviation advisory:
+
+```
+⚠️ Deviation detected: Task [id] "[title]" has unmet dependencies:
+  - [dep_id] [dep_title] — pending
+  - [dep_id] [dep_title] — pending
+
+Options (advisory — your call, not a blocker):
+  A) Mark done anyway (I'll record the deviation with your reason)
+  B) Also mark the unmet dependencies as done
+  C) Cancel — I'll work on the dependencies first
+```
+
+Use AskUserQuestion to get the user's choice.
+
+- **Choice A**: AskUserQuestion for the reason, then mark the task done and append to the `deviations` list:
+  ```yaml
+  - task: "[id]"
+    unmetDeps: ["dep_id1", "dep_id2"]
+    reason: "[user's reason]"
+    timestamp: "[ISO timestamp]"
+  ```
+- **Choice B**: Mark the task AND all unmet dependencies as done. No deviation recorded.
+- **Choice C**: Cancel the update. Show the current state.
+
+**If no deviation** (all dependencies met or task has no dependencies): mark the task done directly.
+
+**After marking done:**
+1. Update `meta.head` to the newly completed task ID.
+2. Update `meta.updated` to today's date.
+3. Compute newly unblocked tasks — any pending task whose `blockedBy` list is now fully satisfied that was NOT available before this change.
+4. Write the updated YAML to the task graph file.
+5. Display a confirmation:
+
+```
+✓ Marked [id] "[title]" as done.
+HEAD: [new head]
+
+Newly available:
+  [ ] [id]  [title]
+  [ ] [id]  [title]
+```
+
+If nothing was newly unblocked, omit the "Newly available" section.
+
+The user may also describe other changes: adding items, reordering, adjusting dependencies. Handle those as edits to the YAML structure and write the updated file.
+
+---
+
+## Mode: INIT
+
+First, check for existing state:
 
 ```bash
 eval $(~/.claude/skills/gstack/bin/gstack-slug 2>/dev/null)
-cat ~/.gstack/projects/$SLUG/callstack.md 2>/dev/null || echo "NO_STACK_FILE"
+_TG_FILE=~/.gstack/projects/$SLUG/taskgraph.yaml
+_OLD_FILE=~/.gstack/projects/$SLUG/callstack.md
+if [ -f "$_TG_FILE" ]; then
+  echo "TASKGRAPH_ALREADY_EXISTS"
+elif [ -f "$_OLD_FILE" ]; then
+  echo "MIGRATE_FROM_CALLSTACK"
+else
+  echo "FRESH_INIT"
+fi
 ```
 
-If no file exists, redirect to INIT mode.
+### If TASKGRAPH_ALREADY_EXISTS
 
-Listen to what the user says they've done or what changed, then update the file:
-- Mark completed items with `[x]`
-- Move `← HERE` to the new current position
-- Add new items if the user mentions new work
-- Update the date
-- Preserve the overall structure
+AskUserQuestion: "A task graph already exists for this project. Do you want to reset it? (This will overwrite the current one.)"
 
-Show the updated stack after writing.
+If no, stop. If yes, proceed with FRESH_INIT.
+
+### If MIGRATE_FROM_CALLSTACK
+
+Read the old `callstack.md` file using the Read tool. Parse the markdown checkboxes to extract:
+- Task IDs (from numbering like 1, 2.1, 2.2)
+- Titles (the text after the checkbox)
+- Status (checked = done, unchecked = pending)
+
+**Migration strategy (conservative):**
+1. Assign tasks to a default theme called "main" (the user can reorganize later).
+2. Assume **linear dependency chain**: task 2.2 `blockedBy: ["2.1"]`, task 2.3 `blockedBy: ["2.2"]`, etc. Sub-tasks depend on the previous sub-task. Top-level tasks depend on the last sub-task of the previous top-level task.
+3. Set `meta.head` to the last completed task ID.
+
+Present the proposed task graph to the user with AskUserQuestion:
+
+"I've converted your callstack to a task graph with linear dependencies (each task depends on the one before it). Here's the proposed structure:
+
+[show the proposed YAML or a summary view]
+
+Want to adjust any parallel relationships? For example, if tasks 2.14 and 2.15 can run in parallel, I'll remove the dependency between them."
+
+Apply any adjustments the user requests. Then write `taskgraph.yaml` and rename the old file:
+
+```bash
+eval $(~/.claude/skills/gstack/bin/gstack-slug 2>/dev/null)
+mv ~/.gstack/projects/$SLUG/callstack.md ~/.gstack/projects/$SLUG/callstack.md.bak
+echo "Migration complete. Old file backed up as callstack.md.bak"
+```
+
+### If FRESH_INIT
+
+AskUserQuestion: "Describe the high-level goals and tasks for this project. I'll organize them into a dependency-aware task graph. You can also tell me which tasks depend on others, or I'll assume a linear sequence."
+
+After the user responds, create the task graph YAML following the schema from TASKGRAPH_CORE. Organize tasks into themes if the user's description suggests natural groupings, otherwise use a single "main" theme.
+
+Write the file:
+
+```bash
+eval $(~/.claude/skills/gstack/bin/gstack-slug 2>/dev/null)
+echo ~/.gstack/projects/$SLUG/taskgraph.yaml
+```
+
+Write the YAML content to that path using the Write tool. Then show the VIEW output so the user can verify.
+
+---
+
+## Mode: ADD
+
+AskUserQuestion: "What task do you want to add? I need:
+- **ID**: A short identifier (e.g., 3.1, 4, fix-auth)
+- **Title**: Brief description (5-15 words)
+- **Theme**: Which theme group? (list existing themes from the file)
+- **Blocked by**: Which task IDs must be done first? (optional — leave blank for no dependencies)"
+
+After the user responds, validate the new task:
+
+1. **ID uniqueness**: The task ID must not already exist in the task graph.
+2. **Dependency existence**: Every ID in `blockedBy` must exist in the task graph.
+3. **No cycles**: Adding this task must not create a circular dependency. Check: starting from each dependency, walk the `blockedBy` chain — the new task's ID must not appear in any chain.
+
+If validation fails, explain the issue and ask the user to correct it.
+
+If validation passes, append the task to the `tasks` map in the YAML and write the updated file. Show the updated VIEW.
+
+---
+
+## Mode: GRAPH (experimental)
+
+Read the task graph file. Display an ASCII dependency graph using arrow notation:
+
+```
+[done tasks shown with ✓, pending with ○]
+
+✓ 1 → ✓ 2.1 → ✓ 2.2 → ✓ 2.3
+                          ↓
+                    ○ 2.14 ──→ ○ 2.16
+                    ○ 2.15 ──↗
+```
+
+This mode is experimental. Keep the output simple — an indented tree or arrow notation showing dependency flow. Don't try to produce a perfect graph layout for complex DAGs; a readable approximation is fine.
+
+For each task, show:
+- ✓ for done
+- ○ for pending (available)
+- ◌ for pending (blocked)
+
+If the graph is too complex to render readably (more than 20 tasks with cross-cutting deps), fall back to a grouped list showing each task's direct dependencies:
+
+```
+2.14 → [2.13]
+2.15 → [2.13]
+2.16 → [2.14, 2.15]
+```
