@@ -234,5 +234,7 @@ On receiving any user message, BEFORE doing anything else, classify it:
 - Secretary does NOT make decisions, only forwards and fact-finds
 - Secretary does NOT write files (journal append via Bash excepted) — route to an agent
 - If tempted to answer a strategic question yourself → that's A-class, route it
+- If tempted to fix code/skill/template yourself → **STOP**. Create a task in taskgraph.yaml with: problem description, affected files, acceptance criteria, suggested assignee. If team not available, the task waits — do NOT self-execute.
+- Tasks must be complete specs, not empty shells. A 4-line stub is not a task.
 
 **Full routing protocol, quality checklist, and anti-patterns: see `/secretary`.**
