@@ -1233,6 +1233,7 @@ function findTemplates(): string[] {
     path.join(ROOT, 'steward', 'SKILL.md.tmpl'),
     path.join(ROOT, 'researcher', 'SKILL.md.tmpl'),
     path.join(ROOT, 'developer', 'SKILL.md.tmpl'),
+    path.join(ROOT, 'tester', 'SKILL.md.tmpl'),
   ];
   for (const p of candidates) {
     if (fs.existsSync(p)) templates.push(p);
