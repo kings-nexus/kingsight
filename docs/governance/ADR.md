@@ -33,14 +33,22 @@ ADR 是项目的"宪法"级文档。变更受 ADR-006（宪法保护机制）约
 - **后果**: 需要自建部分基础设施（模板系统、测试框架），但获得完全的架构自主权。成熟的功能可以反向贡献给上游。
 - **关联**: README-prompt-system.md
 
-## ADR-002: Agent team 强制用 subagent，不用 CLI subprocess
+## ADR-002: AI 调用路径分场景选型（修订自"强制 subagent"）
 
-- **日期**: 2026-03-18
-- **状态**: 已决定
-- **上下文**: 项目中存在三种 AI 调用路径（subagent / CLI subprocess / 混合）。CLI subprocess 需要独立认证（API key 或 CLI 登录），而 subagent 继承当前会话认证，零配置。E2E 测试因依赖 `claude -p` 而要求 API key，但用户从来不需要 API key。
-- **决定**: Agent team 开发和测试全部使用 subagent（Agent tool）。CLI subprocess 仅用于需要多模型或有状态会话的内容生产场景。项目代码永远不引用 API key。
-- **后果**: 测试零配置，开发体验一致。但无法在 subagent 中调用非 Claude 模型（需要时走 CLI subprocess 的路径 2）。
-- **关联**: subproject/ai_invocation_patterns_reference.md, DP-3
+- **日期**: 2026-03-18（初版），2026-03-19（修订）
+- **状态**: 已决定（修订版）
+- **上下文**: 初版规定所有 agent team 工作强制用 subagent，理由是避免 API key 依赖。但 architect Phase 3b 跨模型对抗需要不同模型（Gemini）的独立视角来消除同源偏见——同模型 subagent 只是"换个上下文的自我对话"，无法消除结构性自偏差。已有实证：Prompt Alchemy EXP-009/EXP-010 跨模型验证发现了 Claude 单独无法发现的模式差异。
+- **修订理由**: 质量验证场景的价值（消除自偏差）远超 CLI 配置成本。区分"团队协作"和"质量验证"两类场景。
+- **决定**:
+  1. **团队协作**（路由、编排、开发、测试）→ 强制 subagent（零配置，继承认证）
+  2. **质量验证**（对抗审查、交叉评估）→ 允许 CLI subprocess 调第二模型（需 CLI 已登录）
+  3. **内容生产**（多模型、有状态会话）→ CLI subprocess
+  4. Gemini CLI 不可用时降级策略：告知用户（"Gemini 不可用，降级为 subagent 对抗，同源偏见风险"）+ 日志 WARNING + 不阻塞继续执行
+  5. 嵌套调用时清除 `CLAUDECODE` 环境变量（防止嵌套报错）
+  6. 项目代码仍不直接引用 API key，认证委托给 CLI 工具
+- **后果**: Architect Phase 3b 和 prompt-research 跨模型验证获得真正的独立视角。需要 Gemini CLI 预登录（`gcloud auth login`），但降级方案保证不阻塞。
+- **旧版本**: "Agent team 开发和测试全部使用 subagent。CLI subprocess 仅用于多模型或有状态会话的内容生产场景。"
+- **关联**: subproject/ai_invocation_patterns_reference.md, ADR-006（本修订经宪法评审通过）
 
 ## ADR-003: 一 agent 一领域（修订自"一 agent 一任务"）
 
