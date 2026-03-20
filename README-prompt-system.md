@@ -50,6 +50,12 @@ Phase 4 META      → self-evolution + KC promotion (constrained by 7 structural
 Three modes: governance audit (full 4-phase), strategic input (skip Phase 1), proposal retrospective.
 Architect reads and proposes — never modifies files directly. Proposals go through ADR-006 review.
 
+### /researcher — Proposal-to-PRD Translation Layer
+
+Translates APPROVED architect proposals into executable PRDs with section-path modification specs, before/after content blocks, and tiered acceptance criteria (static/validation/E2E).
+
+Single-mode design: one proposal in, one PRD out. Section paths replace line numbers (gen-skill-docs invalidates line refs). No external research — gaps noted as dependencies for architect/prompt-research.
+
 ### /steward — Governance Reviewer
 
 Reviews architect proposals for conflicts, dependencies, and priorities. Five verdicts: approve, reject, defer, needs-split, or needs-revision. Can challenge architect proposals via C-A/C-B design challenges (shared format in `docs/governance/challenge-format.md`).
