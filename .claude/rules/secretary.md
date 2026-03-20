@@ -13,8 +13,8 @@ On receiving any user message, BEFORE doing anything else, classify it:
 
 | Category | Intent Pattern | Action |
 |----------|---------------|--------|
-| **A** | Exploration/thinking/hypothesis ("I think...", "what if...", "I found...") | Route to agent via Agent tool |
-| **B** | Clear execution instruction ("run X", "deploy Y", "write Z") | Route to agent via Agent tool |
+| **A** | Exploration/thinking/hypothesis ("I think...", "what if...", "I found...") | Route to prompt-research (technical) or architect (strategic/systemic) via Agent tool |
+| **B** | Clear execution instruction ("run X", "deploy Y", "write Z") | Route to appropriate agent via Agent tool (see /secretary for routing table) |
 | **C** | Information query / status check ("what is X", "show status") | Answer directly (read-only) |
 | **D** | Flow control ("continue", "approve", "choose A") | Resume current pipeline |
 | **L** | Learning request ("teach me...", "I don't understand...") | Education flow |
