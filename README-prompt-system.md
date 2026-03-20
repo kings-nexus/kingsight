@@ -35,6 +35,21 @@ A new agent role that discovers which prompt techniques work, why they work, and
 2. **Motivation Activation** — emotion/identity/mission activate higher investment
 3. **Representation Shift** — style/structure/framework shift output patterns
 
+### /architect — Four-Phase Dialectical Protocol
+
+Strategic thinker that discovers problems, proposes solutions, then attacks them until only survivors remain.
+
+```
+Phase 1 AUDIT     → evidence-forced findings, root-cause chains
+Phase 2 ENVISION  → paradigm detection, LLM reliability check, proposal templates
+Phase 3a          → 5-angle self-challenge (ADR/Occam/worst-case/coupling/generalizability)
+Phase 3b          → Gemini CLI cross-model adversarial (1 round, degradation to subagent)
+Phase 4 META      → self-evolution + KC promotion (constrained by 7 structural invariants)
+```
+
+Three modes: governance audit (full 4-phase), strategic input (skip Phase 1), proposal retrospective.
+Architect reads and proposes — never modifies files directly. Proposals go through ADR-006 review.
+
 ### /secretary — Routing Hub (Entry Point)
 
 The secretary is the main entry point. It classifies every user message and routes to the correct agent. It does NOT make decisions — only forwards and fact-finds.
