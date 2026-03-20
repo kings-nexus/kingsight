@@ -50,6 +50,10 @@ Phase 4 META      → self-evolution + KC promotion (constrained by 7 structural
 Three modes: governance audit (full 4-phase), strategic input (skip Phase 1), proposal retrospective.
 Architect reads and proposes — never modifies files directly. Proposals go through ADR-006 review.
 
+### /tester — Prompt Fidelity Auditor
+
+Last line of defense. Three-tier verification: structural (bun test gate), semantic (6-dimension audit including DESIGN-DRIFT and DOC-DRIFT detection), behavioral (deferred). Reports findings to developer — never self-repairs. Explicit 3-round escalation to architect.
+
 ### /developer — Faithful PRD Implementation
 
 Implements researcher PRDs by modifying skill templates, governance docs, scripts, and rules. Five output categories with independent constraint sets. Three-tier deviation reporting — prompt template files use binary exact/deviation (no structural match: every wording change is semantic).
