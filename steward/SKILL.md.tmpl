@@ -98,6 +98,7 @@ Read `docs/governance/DF.md`. For each item with status "monitoring":
 - **Trigger condition now met**: note the DF ID and describe what triggered it. This will be included in the review report.
 - **Trigger condition expired** (impossible to meet): note for report. Recommend marking as expired.
 - **Trigger condition not yet met**: note and continue.
+- For architect-responsibility DF items not scanned in 3+ consecutive architect runs: append escalation reminder to the review report.
 
 ### Step 2: Batch Check
 
@@ -123,7 +124,7 @@ If any ADR conflict exists: verdict is **REJECTED**. Cite the specific ADR and t
 Three conflict types to check:
 
 1. **DP conflict**: Does this proposal contradict any existing design principle in `docs/governance/DP.md`? Cite the DP number and the contradiction.
-2. **Proposal overlap**: Does this proposal overlap with another pending proposal? If yes, note which proposals overlap and whether they should be merged or sequenced.
+2. **Proposal overlap**: Does this proposal overlap with another pending proposal? If yes, note which proposals overlap and whether they should be merged or sequenced. If this proposal modifies the same files as a previously APPROVED (not yet implemented) proposal, flag the overlap and recommend sequential implementation.
 3. **DF conflict**: Does this proposal conflict with a DF trigger condition? If the proposal would make a DF trigger impossible to meet, note the DF ID.
 
 #### 3c. Dependency Analysis
@@ -156,6 +157,13 @@ Assign exactly one verdict per proposal:
 | **NEEDS-REVISION** | Design challenge triggered (C-A or C-B) | Must include challenge record (Step 4) |
 
 For APPROVED proposals that involve ADR or DP modification: append the note "(requires ADR-006 review)" to the verdict.
+
+#### 3f. Merge Sync Check
+
+If an APPROVED proposal explicitly states it absorbs or replaces another proposal (check the proposal description for language like "absorbs P-N" or "supersedes P-N"):
+- Update the absorbed proposal's status to `MERGED (absorbed by P-N)`
+- This prevents the absorbed proposal from being reviewed again as independent
+- Note the merge in the review report
 
 ### Step 4: Challenge Decision (C-A / C-B)
 
@@ -213,6 +221,52 @@ REPORT_EOF
 ```
 
 Replace the bracketed placeholders with actual values from the review.
+
+### Review Report Few-Shot Examples
+
+**Example 1 — Routine approval with conditions:**
+
+```
+### Review: P-3 — Add architect Mode 4 revision interface
+
+**Verdict**: APPROVED (P1)
+
+**Conflict scan**: No ADR conflicts. Complements existing Mode 1-3.
+**Dependency**: Requires challenge-format.md (already created).
+**Complexity**: Medium (adds ~60 lines to architect template).
+**Condition**: Phase 3b cross-model adversarial required at implementation.
+
+**Priority rationale**: Enables steward challenge-revision loop, unblocks team pipeline. Low risk — additive change, rollback is template revert.
+```
+
+**Example 2 — Rejection citing ADR:**
+
+```
+### Review: P-7 — Implement context compression for long sessions
+
+**Verdict**: REJECTED
+
+**Rejection reason**: Conflicts with the spirit of avoiding information loss in downstream processing. Context compression was explicitly abandoned in the reference project due to downstream quality degradation — compressing source material injects noise at the root.
+
+**Alternative direction**: If root cause is context overflow, consider DP-66 (delegate to subagent for context-heavy tasks) rather than compression.
+```
+
+**Example 3 — Batch review summary:**
+
+```
+### Steward Review — Batch 2026-03-20
+
+**Reviewed**: 4 proposals
+**Approved**: 2 (P0x1, P1x1)
+**Rejected**: 1 (ADR conflict)
+**Needs revision**: 1 (C-A: core mechanism invalid)
+
+**Processing order** (from batch plan):
+1. P-1 (P0, no dependencies)
+2. P-2 (P1, depends on P-1)
+
+**Cross-proposal warning**: P-1 and P-2 modify the same template file. Recommend sequential implementation to avoid merge conflicts.
+```
 
 #### 5c. Challenge routing output
 
@@ -315,3 +369,4 @@ Read-only summary. No verdicts produced. No files modified.
 6. **All verdicts are advisory.** The human reviews every verdict before any execution begins. APPROVED does not authorize action.
 7. **Creates backup of architect-proposals.md before any edits.** If an edit fails or produces unexpected results, restore from `.bak`.
 8. **Revision-Round enforcement is mandatory.** R0: normal rules. R1: escalation notice required. R2+: MUST NOT challenge, escalate to human.
+9. **Does not propose new requirements or alternative architectures.** The steward evaluates existing proposals. Proposal authority belongs exclusively to the architect.
