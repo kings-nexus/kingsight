@@ -202,6 +202,65 @@ After constructing the routing prompt, always append a self-assessment line:
 Self-assessment: D1(N) + D2(N) + D3(N sets) + D4(N) + D5(verbatim) + D6(N) = ?/6
 ```
 
+#### Few-Shot: Qualified A-Class Routing Prompt
+
+The following example demonstrates the information density and analysis depth expected. Structure may vary by problem, but depth standard is non-negotiable.
+
+```
+Route target: architect (strategic-input mode)
+User's original message (verbatim): "I think the secretary routing is getting too complex —
+there are too many rules and the prompt quality is still inconsistent"
+
+A. Problem Context
+1. Secretary SKILL.md.tmpl: 454 lines (up from 120 lines in v1)
+2. .claude/rules/secretary.md: 50 lines (L3, loaded every message)
+3. This session: secretary misrouted 2x (recommended education system when team
+   wasn't built, recommended stack fixes when conversation indicated team building)
+4. User stated: "你又开始自己改自己了" (secretary self-modified files 3x in this session)
+
+B. Technical Investigation
+- rules/secretary.md:26 — "Secretary does NOT write files" but secretary
+  edited CLAUDE.md, taskgraph.yaml, and DF.md directly (3 violations logged)
+- secretary/SKILL.md.tmpl:253-265 — B.3 routing table has 11 rows but
+  no quality gate on the constructed prompt
+- ECC comparison: ECC CLAUDE.md is 60 lines; ours was 260 before L2/L3 split
+
+C. Root-Cause Analysis
+- Routing misses ← taskgraph stale (conversation decisions not persisted)
+  ← no rule requiring immediate taskgraph update after user confirms direction
+- Self-modification ← no code-level enforcement of write blacklist
+  ← only prose constraint in template (DP-79: prose rules unreliable)
+
+D. Contextualized Comparison
+- Current: secretary constructs routing prompt with no checklist →
+  architect receives shallow input → shallow analysis cascade (DP-49)
+- Proposed: 6-dim checklist gates every A/B route → minimum information
+  density guaranteed → architect receives dense input
+- Delta: adds ~25 lines to template, adds ~30s per routing cycle
+
+E. Hard Constraints
+1. ADR-003: secretary's domain = routing + prompt construction (inseparable)
+2. DP-63: one good example > N rules (this example IS the standard)
+3. rules/secretary.md must stay under 50 lines (ECC convention)
+
+F. File Index: secretary/SKILL.md.tmpl, .claude/rules/secretary.md,
+   docs/governance/DP.md, subproject/agent_secretary_reference.md
+
+Task search: related to 2.20 (secretary blacklist enforcement, pending)
+
+Self-assessment: D1(4) + D2(2) + D3(1 set) + D4(4) + D5(verbatim) + D6(1: 2.20) = 6/6
+```
+
+#### Qualified vs Unqualified Prompt Comparison
+
+| Dimension | Unqualified | Qualified |
+|-----------|------------|-----------|
+| Data points | "project is large" | "taskgraph 30 tasks / 8 ADR / 10 DF / 454-line secretary template" |
+| Root-cause | "probably caused by X" | "routing misses ← stale taskgraph ← no persistence rule (data-supported)" |
+| Comparison | "A and B each have pros/cons" | "current=[no checklist] / proposed=[6-dim gate] / delta=[+25 lines, +30s/route]" |
+| File paths | "relevant code" | "secretary/SKILL.md.tmpl:253-265, rules/secretary.md:26" |
+| User text | "user wants to improve routing" | "[full original text, verbatim, in user's language]" |
+
 ### A.3: Construct Routing Prompt
 
 Build the task prompt for prompt-research scout mode. Structure:
