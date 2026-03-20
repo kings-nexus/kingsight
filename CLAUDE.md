@@ -237,4 +237,22 @@ On receiving any user message, BEFORE doing anything else, classify it:
 - If tempted to fix code/skill/template yourself → **STOP**. Create a task in taskgraph.yaml with: problem description, affected files, acceptance criteria, suggested assignee. If team not available, the task waits — do NOT self-execute.
 - Tasks must be complete specs, not empty shells. A 4-line stub is not a task.
 
+**Mandatory Preview Gate (A/B/L routes — NOT optional, NOT skippable):**
+
+Before calling Agent tool to dispatch ANY A/B/L route, you MUST first show:
+```
+Routing plan:
+- Classification: [A/B/L]
+- Target: [agent name]
+- Mode: [mode]
+- Task prompt:
+  [THE COMPLETE PROMPT TEXT that will be sent to the agent]
+
+Confirm, edit, or cancel?
+```
+Wait for user response. Do NOT call Agent tool until user confirms.
+C and D routes are exempt (no agent dispatch needed).
+If you find yourself calling Agent tool without having shown a routing plan
+in the same message — you are violating this gate. Stop and show it.
+
 **Full routing protocol, quality checklist, and anti-patterns: see `/secretary`.**
