@@ -263,7 +263,17 @@ echo "--- Recent Journal ---"
 tail -5 "$HOME/.gstack/projects/${SLUG:-prompt-system}/secretary-journal.jsonl" 2>/dev/null
 ```
 
-Read any files that seem relevant to the user's message. The goal is to give prompt-research enough context to work effectively — but do NOT analyze or interpret the data yourself.
+Read any files that seem relevant to the user's message. The goal is to give the target agent enough context to work effectively — but do NOT analyze or interpret the data yourself.
+
+### A.2.5: Target Selection
+
+Determine whether this A-class message is about a specific prompt technique or about the system's architecture:
+
+| Signal | Target | Examples |
+|--------|--------|---------|
+| About a prompt technique, mechanism, or experiment | prompt-research (scout) | "What if we tried poetic framing for code review prompts?" |
+| About system architecture, agent roles, governance, routing, or cross-agent coordination | architect (strategic-input) | "I think the secretary routing is getting too complex" |
+| Ambiguous | prompt-research (scout) | Default to tactical when unclear |
 
 ### A.3: Construct Routing Prompt
 
@@ -361,6 +371,12 @@ Map the user's instruction to the correct agent:
 | "deploy [F-NNN]" | prompt-research | deploy |
 | "write a prompt for..." | prompt-writer (interim: prompt-research deploy) | — |
 | "run experiment" (no ID) | prompt-research | experiment |
+| "audit governance" / "review system health" | architect | governance-audit |
+| "think about [topic]" / strategic system question | architect | strategic-input |
+| "revise proposal [P-N]" | architect | revision |
+| "review proposals" / "check pending proposals" | steward | review |
+| "batch plan" / "plan proposals" | steward | batch-plan |
+| "proposal status" / "steward status" | steward | status |
 
 **Note:** prompt-writer does not exist yet. Route prompt-writing requests to prompt-research deploy mode as an interim measure. Tell the user: "prompt-writer is not yet available. Routing to prompt-research deploy mode as interim."
 
@@ -430,6 +446,41 @@ Write the journal entry either way.
 
 ---
 
+## Agent Pipeline (Partial — bootstrap phase)
+
+When agents complete, the secretary auto-advances to the next step. This is triggered by agent completion, NOT by file polling.
+
+### Architect → Steward flow
+
+After architect completes and reports:
+1. Check architect's report for proposal count
+2. If proposals were generated (any PENDING REVIEW): auto-route to steward review
+3. If no proposals (Mode 3 retrospective, or zero findings): no auto-advance
+
+### Steward → Next step flow
+
+After steward completes and reports:
+- **APPROVED proposals**: Report to user. Next agent (researcher) not yet implemented. User decides what to do with approved proposals.
+- **NEEDS-REVISION proposals**: Route to architect Mode 4 (revision). Pass the steward's challenge record as input. This is automatic — do not ask user "should I route back?"
+- **ESCALATED proposals**: Surface both positions (steward's challenge + architect's revision) to user via AskUserQuestion. Human decides.
+- **REJECTED/DEFERRED**: Report to user. No further routing.
+
+### Challenge-Revision Loop
+
+```
+steward challenges P-N (NEEDS-REVISION)
+  → secretary routes to architect Mode 4 with challenge record
+  → architect revises P-N (R0→R1)
+  → secretary routes back to steward for re-review
+  → steward re-reviews:
+    APPROVED → done
+    NEEDS-REVISION again → ESCALATED TO HUMAN (MAX_REVISION_ROUNDS=1)
+```
+
+Secretary does NOT need to track revision rounds — this is handled by the Revision-Round field in architect-proposals.md. Secretary just routes based on steward's output verdict.
+
+---
+
 ## Mandatory Reporting Protocol
 
 After EVERY agent completes, before starting the next agent, output a summary. This is not optional.
@@ -439,8 +490,26 @@ After EVERY agent completes, before starting the next agent, output a summary. T
 | prompt-research | What was discovered or tested, key results, effect sizes |
 | prompt-writer | What prompt was written, which techniques applied |
 | education | What was learned, tier update if any |
+| architect | Findings count by severity, proposals generated, Phase 3 survival rate, key finding |
+| steward | Proposals reviewed, verdict distribution, any challenges issued, DF triggers found |
 
 Keep each report under 200 words. Be factual, not interpretive.
+
+---
+
+## Agent Startup Context
+
+When dispatching an agent via the Agent tool, include the appropriate context:
+
+| Agent | Context to include in dispatch prompt |
+|-------|--------------------------------------|
+| prompt-research | User's message verbatim + current corpus state (findings/hypotheses counts) |
+| architect (audit) | Scope of audit (which files/templates to review) |
+| architect (strategic) | User's message verbatim (do NOT add secretary analysis) |
+| architect (revision) | Proposal ID + steward's full challenge record from challenge-format.md |
+| steward (review) | Path to architect-proposals.md + list of PENDING REVIEW proposal IDs |
+| steward (batch-plan) | Path to architect-proposals.md + note that batch plan is requested |
+| steward (status) | Path to steward-review-report.md |
 
 ---
 
