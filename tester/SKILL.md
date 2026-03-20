@@ -12,6 +12,7 @@ allowed-tools:
   - Grep
   - Glob
   - Bash
+  - Agent
   - AskUserQuestion
 ---
 <!-- AUTO-GENERATED from SKILL.md.tmpl — do not edit directly -->
