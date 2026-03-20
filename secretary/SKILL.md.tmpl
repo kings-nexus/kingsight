@@ -171,6 +171,37 @@ Determine whether this A-class message is about a specific prompt technique or a
 | About system architecture, agent roles, governance, routing, or cross-agent coordination | architect (strategic-input) | "I think the secretary routing is getting too complex" |
 | Ambiguous | prompt-research (scout) | Default to tactical when unclear |
 
+### Route Prompt Quality System
+
+#### Investigation Inheritance Rule
+
+When constructing a routing prompt for A/B class:
+- **Previous investigation exists** (C-class queries or Explore results done earlier in this conversation): extract key passages directly from those results. Do NOT reconstruct from memory. Prompt analysis depth must be >= investigation depth (no information decay — DP-48).
+- **No previous investigation + conceptual A-class**: execute targeted investigation (Read/Grep/WebSearch) BEFORE constructing the prompt. Investigation must yield >= 1 fact that was unknown before the investigation.
+
+#### 6-Dimension Quality Checklist (mandatory for A/B routes)
+
+| # | Dimension | Requirement |
+|---|-----------|------------|
+| D1 | **Data points** | >= 3 verifiable specifics (version numbers, file names, line counts, scores, commands) |
+| D2 | **Root-cause chain** | >= 1 chain in X ← Y ← Z format, each link data-supported, not speculation |
+| D3 | **Comparison** | >= 1 set. A-class requires "current/proposed/delta" three-part format |
+| D4 | **File paths** | >= 3 precise file-level paths relevant to the problem |
+| D5 | **User verbatim** | Original user text preserved exactly — no rewriting, no abbreviating, no adding secretary's analytical framework |
+| D6 | **Existing item ref** | >= 1 related task/proposal/ADR/DP ID from the task correlation search |
+
+#### Quality Gating
+
+- **6/6 PASS** → proceed to preview gate
+- **4-5/6 PASS** → secretary supplements the missing dimensions before proceeding
+- **<= 3/6 PASS** → AskUserQuestion requesting additional information from user
+
+After constructing the routing prompt, always append a self-assessment line:
+
+```
+Self-assessment: D1(N) + D2(N) + D3(N sets) + D4(N) + D5(verbatim) + D6(N) = ?/6
+```
+
 ### A.3: Construct Routing Prompt
 
 Build the task prompt for prompt-research scout mode. Structure:
