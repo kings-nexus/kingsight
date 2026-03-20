@@ -113,3 +113,13 @@
 - **检查责任**: 人类手动
 - **检查方法**: 检查 architect-proposals.md 中 status 为 IMPLEMENTED 的条目数
 - **状态**: 🔍 监控中
+
+### DF-010: Steward 积压滚动扫描
+- **来源**: steward_protocol_reference.md 步骤 0.5, F-S2 失败模式
+- **原始提案摘要**: 每次 steward 运行时检查最旧的 3 个待审提案，评估是否仍相关。过时或被覆盖的标记延迟并释放列表空间
+- **否决理由**: 当前提案数量极少（0 个），积压问题不存在
+- **有价值遗产**: 防止低优先级提案永远沉底的滚动扫描机制
+- **触发条件**: architect-proposals.md 中 PENDING REVIEW 条目 >= 10
+- **检查责任**: 人类手动
+- **检查方法**: `grep -c "PENDING REVIEW" ~/.gstack/projects/$SLUG/architect-proposals.md`
+- **状态**: 🔍 监控中
