@@ -92,3 +92,59 @@
 - **适用范围**: 所有 agent 的问题响应模式。任何错误修复流程的交付物必须包含一个结构性变更（代码/配置/清单），不能只是"记住下次注意"。
 - **反例/边界**: 探索性研究（prompt-research scout 模式）的交付物确实是分析和假设，不需要修复机制。此原则适用于**已知问题的修复**，不适用于**未知领域的探索**。
 - **验证状态**: 已验证（本 session 内：遗漏 commit → 加了 memory 但继续遗漏 → 加了 CLAUDE.md Definition of Done 清单 = 结构性修复）
+
+### DP-48: 结构化模板的有损压缩效应
+- **来源**: knowledge_governance_reference.md, LLM 从自由分析切换到填表模式时的信息衰减
+- **精炼表述**: LLM 从已有分析中直接提取，而非按模板逐项填写。模板驱动的填表模式系统性地降低分析深度。
+- **适用范围**: 路由 prompt 构造、PRD 撰写、任何将自由文本结构化的流程
+- **反例/边界**: 首次生成（无已有分析可提取时）必须使用模板作为构造工具
+- **验证状态**: 已验证（secretary V2 参考文档引用，本项目 session 中观察到 prompt 质量随模板化降低）
+
+### DP-49: 串联 Agent 架构的上游门控原则
+- **来源**: knowledge_governance_reference.md, 上游信息损失不可在下游恢复
+- **精炼表述**: 在串联架构中，上游层分配在下游层需要显式强制。门控必须在最上游（信息入口点）实施。
+- **适用范围**: secretary 路由 prompt 质量、architect-steward-researcher-developer-tester 流水线
+- **反例/边界**: 并行架构中各分支独立，不适用串联门控
+- **验证状态**: 已验证（secretary 路由 prompt 浅薄 → architect 分析浅薄 → 级联退化，本 session 多次观察）
+
+### DP-50: LLM 自评偏见是结构性的，收紧规则无法消除
+- **来源**: knowledge_governance_reference.md, 规则严格度 vs 评估者身份
+- **精炼表述**: 必须改变评估者身份（引入外部模型或独立 session），而非收紧自评规则。
+- **适用范围**: secretary 6/6 自评、architect Phase 3a 自我对抗、任何 agent 自评场景
+- **反例/边界**: 纯形式检查（JSON 合法性、文件存在性）可自评，语义质量不可自评
+- **验证状态**: 已验证（architect Phase 3b 使用 Gemini 消除自评偏见）
+
+### DP-53: 模板角色光谱定律 — 模板从"构造工具"随成熟度退化为"填表对象"
+- **来源**: knowledge_governance_reference.md
+- **精炼表述**: 冷启动阶段模板有效，但随使用次数增加 LLM 从"学习结构"退化为"机械填充"。标志：自评通过但人类判定不合格。此时引入完整填充范例替代骨架模板。
+- **适用范围**: skill 模板设计、PRD 模板、路由 prompt 模板
+- **反例/边界**: 纯数据收集模板（表单）不退化
+- **验证状态**: 部分验证（DP-63 范例密度定律是对此的响应）
+
+### DP-56: Stateless Agent 知识可达性定律 — 文件存在 ≠ 文件可达
+- **来源**: knowledge_governance_reference.md, 创建新知识文件时必须同时注册加载触发条件
+- **精炼表述**: Stateless Agent 只能使用确定性可达的知识。"记得要读 X" 不是确定性加载。
+- **适用范围**: 新建 skill/memory/rule 文件时必须在 Layer 0 注册加载触发
+- **反例/边界**: Layer 0 文件本身（CLAUDE.md、rules/）自动加载，无需注册
+- **验证状态**: 已验证（本项目 /stack skill 创建后未注册 symlink → 不可发现；secretary 预览门控在 L4 → 不执行）
+
+### DP-57: 分类门控的假阳性/假阴性不对称性
+- **来源**: knowledge_governance_reference.md
+- **精炼表述**: "绕过型误分类"（应执行但被跳过）导致信息损失不可逆；"冗余型误分类"（不必执行但执行了）仅增加 token 开销。歧义默认应选择代价低的方向。
+- **适用范围**: secretary ABCDL 分类（模糊→默认 A）、Step 0 概念/现场型判定
+- **反例/边界**: 当冗余执行的成本极高（如每次都调 Gemini CLI）时需重新评估
+- **验证状态**: 已验证（secretary 模糊默认 A 的设计依据）
+
+### DP-58: 正向流程步骤 > 反模式清单
+- **来源**: knowledge_governance_reference.md
+- **精炼表述**: 对 stateless agent 的行为约束，正向步骤（"第 N 步: 做 Y"）可靠性系统性高于反模式清单（"不要做 X"）。
+- **适用范围**: skill 模板设计、secretary 预览门控（从反模式"不要跳过"改为正向步骤"步骤 5: 预览"）
+- **反例/边界**: 绝对禁止项仍需负面约束作为兜底（安全红线）
+- **验证状态**: 已验证（预览门控从反模式升级为正向步骤后执行率提升）
+
+### DP-60: 自动注入 Scope 不对称性
+- **来源**: knowledge_governance_reference.md
+- **精炼表述**: 利用共享配置自动注入机制时，成功标准必须包含"非目标消费者行为不受影响"。角色专属规则被全局注入会干扰其他 Agent。
+- **适用范围**: .claude/rules/ 文件编写（auto-load 到所有 agent）、secretary 身份约束
+- **反例/边界**: 真正全局的规则（安全策略、commit 纪律）应该注入所有角色
+- **验证状态**: 已验证（secretary rules 污染 architect subagent → 需 scope 声明修复）
