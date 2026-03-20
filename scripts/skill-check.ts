@@ -35,6 +35,7 @@ const SKILL_FILES = [
   'stack/SKILL.md',
   'secretary/SKILL.md',
   'architect/SKILL.md',
+  'steward/SKILL.md',
 ].filter(f => fs.existsSync(path.join(ROOT, f)));
 
 let hasErrors = false;
