@@ -59,7 +59,7 @@ If no recent developer changes detected: report "No changes to verify. Nothing t
 
 ---
 
-## Workflow (single mode — 7 steps)
+## Workflow (single mode — 8 steps)
 
 ### Step 1: Read Developer Changes
 
@@ -175,7 +175,76 @@ When developer changes involve .claude/ files (skills/commands/rules):
 
 Only objective, verifiable dimensions. No subjective "is it clear?" checks.
 
-### Step 5: Quality Report Output
+### Step 5: Tier 3 — Behavioral Verification (E2E via subagent)
+
+**Trigger**: Tier 2 all PASS, AND `test/scenarios/` contains at least one `.yaml` file with touchfiles matching the current change.
+
+**Pre-check**:
+
+```bash
+ls /home/durden/gstack/test/scenarios/*.yaml 2>/dev/null | wc -l | tr -d ' '
+```
+
+If 0 scenario files: output "Tier 3: No scenario files found in test/scenarios/. Skipped." and proceed to verdict.
+
+**Execution flow**:
+
+1. **Scan scenarios**: Read all `.yaml` files in `test/scenarios/`. For each scenario in each file:
+
+2. **Touchfile check** (diff-based selection): Does the current change involve any of this scenario's `touchfiles`? Check by comparing the list of changed files (from Step 1) against each scenario's `touchfiles` list.
+   - Match → run this scenario
+   - No match → skip ("not triggered by current changes")
+
+3. **Execute matched scenarios**: For each triggered scenario, launch a subagent:
+
+```
+Agent(
+  prompt="You are a [scenario.agent] agent being tested.
+
+  Read your skill template at /home/durden/gstack/[scenario.agent]/SKILL.md
+  and follow its instructions.
+
+  User input: [scenario.input]
+
+  After processing, report your behavior in structured format:
+  - Classification (if applicable): [A/B/C/D/L]
+  - Mode selected (if applicable): [mode name]
+  - Actions taken: [list of actions]
+  - Routing plan shown: [yes/no]
+  - Agent dispatched: [yes/no, which agent]
+  - Self-assessment line (if applicable): [line content]
+  - Files modified: [list or none]
+
+  Be truthful about what you did and did not do."
+)
+```
+
+4. **Verify expectations**: For each `expect` key-value in the scenario:
+   - Check the subagent's structured output against the expectation
+   - Mark each expectation as PASS or FAIL with evidence
+
+5. **Timeout**: Each scenario has a 120-second timeout. If subagent does not return within timeout, mark scenario as TIMEOUT.
+
+6. **Results**: Aggregate results:
+
+```
+Tier 3 (Behavioral):
+  Scenarios scanned: N total, M triggered by changes, K skipped
+  Results:
+    [scenario-name]: PASS (all N expectations met)
+    [scenario-name]: FAIL (expectation X failed: expected Y, got Z)
+    [scenario-name]: SKIPPED (touchfiles not in current change)
+```
+
+**Integration with quality report**: Tier 3 results are appended to the quality report after Tier 2 results. A Tier 3 FAIL does not automatically fail the overall verdict — it is flagged as a behavioral concern:
+
+- All Tier 3 PASS → overall verdict considers Tier 3 clean
+- Any Tier 3 FAIL → overall verdict includes "Behavioral concern: [scenario-name] failed" but does NOT override a Tier 2 PASS. Rationale: behavioral tests via subagent have inherent non-determinism (LLM output varies). A FAIL is a strong signal to investigate, not an automatic rejection.
+- Tier 3 TIMEOUT → flagged but not counted as FAIL
+
+**Scenario freshness note**: If a scenario's touchfiles haven't appeared in the last 20 commits of `git log`, note it as "potentially stale — re-verify scenario still matches current agent behavior."
+
+### Step 6: Quality Report Output
 
 Write quality report via Bash append:
 
@@ -190,12 +259,13 @@ REPORT_EOF
 
 Replace the placeholder with the actual report content following the format below.
 
-### Step 6: Verdict
+### Step 7: Verdict
 
-- All Tier 1 PASS + All Tier 2 dimensions PASS or NOT-TRIGGERED → **PASS** (ready for commit)
-- Any finding → **FAIL** (report to developer for fix)
+- All Tier 1 PASS + All Tier 2 PASS or NOT-TRIGGERED + All Tier 3 PASS or SKIPPED → **PASS** (ready for commit)
+- Any Tier 1 or Tier 2 finding → **FAIL** (report to developer for fix)
+- Tier 3 FAIL → **PASS with behavioral concern** (flag for investigation, not auto-reject)
 
-### Step 7: Escalation Check
+### Step 8: Escalation Check
 
 Track fix round explicitly:
 - This is Round [N] of the fix cycle for this PRD
@@ -227,10 +297,12 @@ Track fix round explicitly:
 - #6 Doc drift: [PASS / NOT TRIGGERED / ⚠️ DOC-DRIFT-N]
 
 ### Tier 3 (Behavioral)
-Deferred — not yet implemented.
+- Scenarios: [N scanned, M triggered, K skipped]
+- [scenario-name]: [PASS/FAIL/SKIPPED/TIMEOUT] [detail if FAIL]
+- [scenario-name]: [PASS/FAIL/SKIPPED/TIMEOUT]
 
 ### Verdict
-[PASS — ready for commit / FAIL — Round N, report to developer / ESCALATE — 3 rounds failed]
+[PASS — ready for commit / FAIL — Round N, report to developer / PASS with behavioral concern — [scenario] / ESCALATE — 3 rounds failed]
 
 ### Acceptance Criteria Check
 | # | Criterion | Verification | Status |
@@ -263,7 +335,10 @@ Deferred — not yet implemented.
 - #6 Doc drift: NOT TRIGGERED (no role definition changes)
 
 ### Tier 3 (Behavioral)
-Deferred.
+- Scenarios: 3 scanned, 2 triggered, 1 skipped
+- exploration-routes-to-agent: PASS (5/5 expectations met)
+- quality-checklist-enforced: PASS (6/6 expectations met)
+- info-query-direct-answer: SKIPPED (touchfiles not in current change)
 
 ### Verdict
 PASS — ready for commit.
@@ -271,8 +346,8 @@ PASS — ready for commit.
 ### Acceptance Criteria Check
 | # | Criterion | Verification | Status |
 |---|-----------|-------------|--------|
-| 1 | Secretary auto-routes APPROVED to researcher | E2E | DEFERRED (Tier 3) |
-| 2 | Proposal ID passed in dispatch | E2E | DEFERRED (Tier 3) |
+| 1 | Secretary auto-routes APPROVED to researcher | E2E | PASS (Tier 3) |
+| 2 | Proposal ID passed in dispatch | E2E | PASS (Tier 3) |
 | 3 | "not yet implemented" text removed | static (grep) | PASS |
 | 4 | gen-skill-docs passes | static | PASS |
 | 5 | skill-validation passes | validation | PASS |
@@ -309,10 +384,13 @@ PASS — ready for commit.
 - #6 Doc drift: PASS
 
 ### Tier 3 (Behavioral)
-Deferred.
+- Scenarios: 2 scanned, 2 triggered, 0 skipped
+- mode-2-strategic-input: PASS (7/7 expectations met)
+- mode-4-revision: FAIL (expectation constrained_to_single_proposal: expected true, got false — architect generated 2 new proposals alongside the revision)
 
 ### Verdict
 FAIL — Round 1. Report DESIGN-DRIFT-1 to developer for fix.
+Behavioral concern: mode-4-revision failed (investigate non-determinism vs real regression).
 ```
 
 ### Example 3 — DOC-DRIFT detection
