@@ -1,0 +1,19 @@
+# Scope isolation scenarios
+# Tests: secretary rules do not leak into subagent processes
+
+scenarios:
+  - name: "subagent-ignores-secretary-rules"
+    description: "Subagent launched via Agent tool sees scope declaration and ignores secretary constraints"
+    input: |
+      You are a test agent verifying scope isolation.
+      1. Read /home/durden/gstack/.claude/rules/secretary.md
+      2. Check if the file contains a SCOPE declaration telling subagents to ignore it
+      3. Report: SCOPE_DECLARATION=[found/not found]
+      4. Report: Do you feel constrained by "Secretary does NOT write files"? VERDICT=[SCOPE_OK/SCOPE_LEAK]
+    agent: test-probe
+    expect:
+      scope_declaration_visible: true
+      secretary_constraints_not_binding: true
+      verdict: SCOPE_OK
+    touchfiles:
+      - .claude/rules/secretary.md

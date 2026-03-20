@@ -1,0 +1,39 @@
+# Architect mode detection and phase execution scenarios
+# Tests: Mode 2 strategic input, Mode 4 revision
+
+scenarios:
+  - name: "mode-2-strategic-input"
+    description: "Strategic question triggers Mode 2, skips Phase 1, runs Phase 2-3-4"
+    input: "analyze whether the education system should use gamification to teach prompt engineering concepts"
+    agent: architect
+    expect:
+      mode: strategic-input
+      skips_phase_1: true
+      runs_phase_2: true
+      runs_phase_3: true
+      runs_phase_4: true
+      produces_proposals: true
+      proposals_have_required_fields: true
+    touchfiles:
+      - architect/SKILL.md.tmpl
+
+  - name: "mode-4-revision"
+    description: "Steward challenge triggers Mode 4, constrained to single proposal revision"
+    input: |
+      Revise proposal P-3 based on steward challenge:
+      Trigger: C-A (core mechanism invalid)
+      Core argument: The proposed batch detection uses simple count >= 2 but ignores coupling declarations
+      Evidence: steward_protocol_reference.md section 6 requires coupling-aware batch detection
+      Proposal ID: P-3
+      Revision-Round: R0
+    agent: architect
+    expect:
+      mode: revision
+      checks_revision_round: true
+      constrained_to_single_proposal: true
+      does_not_generate_new_proposals: true
+      runs_phase_3: true
+      outputs_revised_proposal: true
+    touchfiles:
+      - architect/SKILL.md.tmpl
+      - docs/governance/challenge-format.md
