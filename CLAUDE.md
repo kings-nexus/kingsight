@@ -206,6 +206,7 @@ A feature is NOT done until all items are checked:
 - [ ] `bun run skill:check` — new skills registered in dashboard
 - [ ] Symlinks verified — `./setup` from skills dir if new skill added
 - [ ] E2E verification via subagent (not manual, not `claude -p`)
+- [ ] CLAUDE.md/rules changes verified via subagent (not "next session will test it")
 - [ ] Governance updated if applicable (ADR/DP/DF)
 
 Skip items that don't apply, but explicitly note which and why.
