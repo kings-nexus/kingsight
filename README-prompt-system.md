@@ -50,6 +50,12 @@ Phase 4 META      → self-evolution + KC promotion (constrained by 7 structural
 Three modes: governance audit (full 4-phase), strategic input (skip Phase 1), proposal retrospective.
 Architect reads and proposes — never modifies files directly. Proposals go through ADR-006 review.
 
+### /developer — Faithful PRD Implementation
+
+Implements researcher PRDs by modifying skill templates, governance docs, scripts, and rules. Five output categories with independent constraint sets. Three-tier deviation reporting — prompt template files use binary exact/deviation (no structural match: every wording change is semantic).
+
+Does not write tests (tester exclusive). CLAUDE.md modification requires separate dedicated PRD.
+
 ### /researcher — Proposal-to-PRD Translation Layer
 
 Translates APPROVED architect proposals into executable PRDs with section-path modification specs, before/after content blocks, and tiered acceptance criteria (static/validation/E2E).
