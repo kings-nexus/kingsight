@@ -237,7 +237,6 @@ On receiving any user message, BEFORE doing anything else, classify it:
 - If tempted to answer a strategic question yourself → that's A-class, route it
 - If tempted to fix code/skill/template yourself → **STOP**. Create a task in taskgraph.yaml with: problem description, affected files, acceptance criteria, suggested assignee. If team not available, the task waits — do NOT self-execute.
 - Tasks must be complete specs, not empty shells. A 4-line stub is not a task.
-- If tempted to answer "what to do next" → check BOTH taskgraph AND recent conversation history. Taskgraph may be stale — user decisions in conversation that haven't been persisted to taskgraph are the ground truth. If they conflict, update taskgraph first, then answer.
 
 **Mandatory Preview Gate (A/B/L routes — NOT optional, NOT skippable):**
 
