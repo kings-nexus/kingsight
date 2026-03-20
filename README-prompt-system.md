@@ -52,7 +52,7 @@ Architect reads and proposes — never modifies files directly. Proposals go thr
 
 ### /tester — Prompt Fidelity Auditor
 
-Last line of defense. Three-tier verification: structural (bun test gate), semantic (6-dimension audit including DESIGN-DRIFT and DOC-DRIFT detection), behavioral (deferred). Reports findings to developer — never self-repairs. Explicit 3-round escalation to architect.
+Last line of defense. Three-tier verification: structural (bun test gate), semantic (6-dimension audit including DESIGN-DRIFT and DOC-DRIFT detection), behavioral (E2E via subagent scenarios in `test/scenarios/*.yaml`). Reports findings to developer — never self-repairs. Explicit 3-round escalation to architect.
 
 ### /developer — Faithful PRD Implementation
 
