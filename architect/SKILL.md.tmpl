@@ -59,6 +59,7 @@ Three modes. Detect from the user's invocation, then execute that mode to comple
 | **Mode 1: Governance Audit** | `/architect audit` or given a set of files/directory to review | All four: AUDIT -> ENVISION -> ADVERSARIAL -> META |
 | **Mode 2: Strategic Input** | `/architect think [topic]` or given a question/idea | Skip Phase 1, start at ENVISION (user input replaces audit findings), then ADVERSARIAL -> META |
 | **Mode 3: Proposal Retrospective** | `/architect retro [proposal-id]` or asked to evaluate past proposals | Targeted Phase 1 (compare before/after), then META reflection. No new proposals. |
+| **Mode 4: Revision** | `/architect revise [proposal-id]` or given a steward challenge with proposal ID | Constrained Phase 2 (revise specific proposal) -> Phase 3 -> Phase 4 |
 
 If the mode is ambiguous, default to Mode 1 (governance audit).
 
@@ -459,6 +460,73 @@ META proposals go to `~/.gstack/projects/$SLUG/architect-meta-proposals.md`, NOT
 
 ---
 
+## Mode 4: REVISION -- Constrained Proposal Redesign
+
+**Goal**: Revise a specific proposal in response to a steward design challenge. This is NOT a full audit or strategic dialogue -- it is a focused redesign of one proposal to address one identified flaw.
+
+**Input**: Proposal ID + challenge record (see `docs/governance/challenge-format.md` for format).
+
+### Step 0: Round Check
+
+Read the challenged proposal from `~/.gstack/projects/$SLUG/architect-proposals.md`. Check the `Revision-Round` field.
+
+- If Revision-Round >= R1: **REFUSE**. Output: "MAX_REVISION_ROUNDS reached for [proposal-id]. This proposal has already been revised once. Further challenges must be escalated to human decision." Stop.
+- If Revision-Round = R0: proceed.
+
+### Step 1: Understand the Challenge
+
+Read the steward's challenge record. Identify:
+- Which trigger was invoked (C-A or C-B)?
+- What is the core argument?
+- What factual evidence supports the challenge?
+
+Evaluate honestly: **Is the challenge valid?**
+- If the challenge identifies a real flaw -> proceed to Step 2 (redesign).
+- If the challenge is based on missing context or incorrect premises -> still proceed to Step 2, but note in the revision that you disagree with the challenge and explain why. The steward will re-review and may escalate.
+
+### Step 2: Constrained Phase 2 (ENVISION)
+
+Redesign the proposal to address the identified flaw. Constraints:
+- **Scope**: Only revise the challenged proposal. Do NOT generate new proposals.
+- **Focus**: Address the specific flaw identified by the challenge. Do not redesign from scratch unless the flaw is fundamental.
+- **LLM Reliability Check**: Apply the same Step 2.0 checks as in normal Phase 2.
+- **Output**: Revised proposal using the same template format, same Proposal ID, with `Revision-Round: R1`.
+
+### Step 3: Attack the Revision (Phase 3)
+
+Run the full Phase 3 adversarial cycle on the revised proposal:
+- Phase 3a: All 5 attack angles
+- Phase 3b: Trigger check (likely triggered since the original proposal triggered steward challenge)
+
+If the revised proposal is killed by Phase 3: output the kill reasoning. The proposal is dead. Record as killed in the audit log. Append to DF if applicable.
+
+### Step 4: Reflection (Phase 4)
+
+Abbreviated META reflection:
+1. Was the steward's challenge valid? Did the revision actually address the flaw?
+2. Did the revision introduce new problems not present in the original?
+3. Should the challenge pattern be recorded as a DP? (KC check)
+
+### Output
+
+Append the revised proposal to `~/.gstack/projects/$SLUG/architect-proposals.md` with:
+- Same Proposal ID (e.g., P-3)
+- `Revision-Round: R1`
+- `Status: PENDING REVIEW`
+- A "Revision Note" field: what was changed and why, referencing the steward's challenge
+
+Append to audit log:
+```
+### [Date] Mode 4 Revision
+- Challenged proposal: [ID]
+- Challenge trigger: C-A / C-B
+- Challenge valid: yes/no
+- Revision survived Phase 3: yes/no
+- Kill rate: N/A (single proposal)
+```
+
+---
+
 ## Structural Invariants
 
 Phase 4 self-evolution CANNOT modify these:
@@ -496,6 +564,7 @@ Each surviving proposal is written to `~/.gstack/projects/$SLUG/architect-propos
 - **Priority**: [based on leverage multiplier and risk rating]
 - **Success criterion**: [quantifiable metric]
 - **Adversarial record**: Phase 3a [conclusion] + Phase 3b [conclusion or "not triggered"]
+- **Revision-Round**: R0
 - **Status**: PENDING REVIEW
 ```
 
