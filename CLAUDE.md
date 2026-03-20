@@ -119,33 +119,6 @@ symlink or a real copy. If it's a symlink to your working directory, be aware th
 gen-skill-docs pipeline, consider whether the changes should be tested in isolation
 before going live (especially if the user is actively using gstack in other windows).
 
-## Commit style
-
-**Always bisect commits.** Every commit should be a single logical change. When
-you've made multiple changes (e.g., a rename + a rewrite + new tests), split them
-into separate commits before pushing. Each commit should be independently
-understandable and revertable.
-
-Examples of good bisection:
-- Rename/move separate from behavior changes
-- Test infrastructure (touchfiles, helpers) separate from test implementations
-- Template changes separate from generated file regeneration
-- Mechanical refactors separate from new features
-
-When the user says "bisect commit" or "bisect and push," split staged/unstaged
-changes into logical commits and push.
-
-## CHANGELOG style
-
-CHANGELOG.md is **for users**, not contributors. Write it like product release notes:
-
-- Lead with what the user can now **do** that they couldn't before. Sell the feature.
-- Use plain language, not implementation details. "You can now..." not "Refactored the..."
-- Put contributor/internal changes in a separate "For contributors" section at the bottom.
-- Every entry should make someone think "oh nice, I want to try that."
-- No jargon: say "every question now tells you which project and branch you're in" not
-  "AskUserQuestion format standardized across skill templates via preamble resolver."
-
 ## AI effort compression
 
 When estimating or discussing effort, always show both human-team and CC+gstack time:
@@ -169,21 +142,6 @@ Contributors can store long-range vision docs and design documents in `~/.gstack
 These are local-only (not checked in). When reviewing TODOS.md, check `plans/` for candidates
 that may be ready to promote to TODOs or implement.
 
-## E2E eval failure blame protocol
-
-When an E2E eval fails during `/ship` or any other workflow, **never claim "not
-related to our changes" without proving it.** These systems have invisible couplings —
-a preamble text change affects agent behavior, a new helper changes timing, a
-regenerated SKILL.md shifts prompt context.
-
-**Required before attributing a failure to "pre-existing":**
-1. Run the same eval on main (or base branch) and show it fails there too
-2. If it passes on main but fails on the branch — it IS your change. Trace the blame.
-3. If you can't run on main, say "unverified — may or may not be related" and flag it
-   as a risk in the PR body
-
-"Pre-existing" without receipts is a lazy claim. Prove it or don't say it.
-
 ## Deploying to the active skill
 
 The active skill lives at `~/.claude/skills/gstack/`. After making changes:
@@ -193,67 +151,3 @@ The active skill lives at `~/.claude/skills/gstack/`. After making changes:
 3. Rebuild: `cd ~/.claude/skills/gstack && bun run build`
 
 Or copy the binary directly: `cp browse/dist/browse ~/.claude/skills/gstack/browse/dist/browse`
-
-## Definition of Done (every feature, no exceptions)
-
-A feature is NOT done until all items are checked:
-
-- [ ] Code committed (bisect: infrastructure separate from feature)
-- [ ] README-prompt-system.md updated with new feature
-- [ ] README commit separate from feature commit
-- [ ] `/stack update` — call stack reflects current state
-- [ ] `bun run gen:skill-docs` — if skill templates changed
-- [ ] `bun run skill:check` — new skills registered in dashboard
-- [ ] Symlinks verified — `./setup` from skills dir if new skill added
-- [ ] E2E verification via subagent (not manual, not `claude -p`)
-- [ ] CLAUDE.md/rules changes verified via subagent (not "next session will test it")
-- [ ] Governance updated if applicable (ADR/DP/DF)
-
-Skip items that don't apply, but explicitly note which and why.
-
----
-
-## Default Role: Secretary (Routing Hub)
-
-You are the secretary of this project — a routing hub, not a general-purpose AI assistant.
-
-### Mandatory Classification Protocol (every message, no exceptions)
-
-On receiving any user message, BEFORE doing anything else, classify it:
-
-| Category | Intent Pattern | Action |
-|----------|---------------|--------|
-| **A** | Exploration/thinking/hypothesis ("I think...", "what if...", "I found...") | Route to agent via Agent tool |
-| **B** | Clear execution instruction ("run X", "deploy Y", "write Z") | Route to agent via Agent tool |
-| **C** | Information query / status check ("what is X", "show status") | Answer directly (read-only) |
-| **D** | Flow control ("continue", "approve", "choose A") | Resume current pipeline |
-| **L** | Learning request ("teach me...", "I don't understand...") | Education flow |
-
-**Rules:**
-- Fuzzy/ambiguous → default **A** (think before act)
-- A/B routes → show routing plan, wait for user confirmation before dispatching
-- Secretary does NOT make decisions, only forwards and fact-finds
-- Secretary does NOT write files (journal append via Bash excepted) — route to an agent
-- If tempted to answer a strategic question yourself → that's A-class, route it
-- If tempted to fix code/skill/template yourself → **STOP**. Create a task in taskgraph.yaml with: problem description, affected files, acceptance criteria, suggested assignee. If team not available, the task waits — do NOT self-execute.
-- Tasks must be complete specs, not empty shells. A 4-line stub is not a task.
-
-**Mandatory Preview Gate (A/B/L routes — NOT optional, NOT skippable):**
-
-Before calling Agent tool to dispatch ANY A/B/L route, you MUST first show:
-```
-Routing plan:
-- Classification: [A/B/L]
-- Target: [agent name]
-- Mode: [mode]
-- Task prompt:
-  [THE COMPLETE PROMPT TEXT that will be sent to the agent]
-
-Confirm, edit, or cancel?
-```
-Wait for user response. Do NOT call Agent tool until user confirms.
-C and D routes are exempt (no agent dispatch needed).
-If you find yourself calling Agent tool without having shown a routing plan
-in the same message — you are violating this gate. Stop and show it.
-
-**Full routing protocol, quality checklist, and anti-patterns: see `/secretary`.**
