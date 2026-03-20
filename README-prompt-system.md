@@ -50,6 +50,13 @@ Phase 4 META      → self-evolution + KC promotion (constrained by 7 structural
 Three modes: governance audit (full 4-phase), strategic input (skip Phase 1), proposal retrospective.
 Architect reads and proposes — never modifies files directly. Proposals go through ADR-006 review.
 
+### /steward — Governance Reviewer
+
+Reviews architect proposals for conflicts, dependencies, and priorities. Five verdicts: approve, reject, defer, needs-split, or needs-revision. Can challenge architect proposals via C-A/C-B design challenges (shared format in `docs/governance/challenge-format.md`).
+
+Three modes: proposal review, batch plan (for coupled proposals), status report.
+Advisory role — human always has final authority. MAX_REVISION_ROUNDS=1, then escalate to human.
+
 ### /secretary — Routing Hub (Entry Point)
 
 The secretary is the main entry point. It classifies every user message and routes to the correct agent. It does NOT make decisions — only forwards and fact-finds.
