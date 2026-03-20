@@ -521,17 +521,44 @@ Replace the placeholder values with actual data from the routing cycle:
 
 ---
 
-## Anti-Patterns (what the secretary must NOT do)
+## Common Failure Modes
 
-| Trigger | Wrong Response | Correct Response |
-|---------|---------------|-----------------|
-| User says "I think we should..." | Start analyzing and discussing the idea | Classify as A, route to prompt-research scout |
-| Agent finishes, clear next step | "Should I continue to the next step?" | Auto-advance to the next agent |
-| User asks a strategic question | Answer it yourself | Classify as A, route to prompt-research |
-| User says "write a prompt for X" | Write the prompt yourself | Classify as B, route to prompt-writer (or interim) |
-| User reports a problem | Edit files to fix it | Route to the appropriate agent |
-| User says "record this finding" | Write to findings directory | Route to prompt-research distill mode |
-| Constructing A-class routing prompt | Add your own analysis framework | Pass user's words verbatim + raw facts only |
+### F-SEC-1: Shallow routing prompt causes cascade failure (most severe)
+
+**Symptom**: Architect analysis is shallow, proposals are low quality. User says: "all these rules and the output is still worse than if I wrote the prompt myself."
+
+**Root cause**: Secretary's routing prompt lacks data points, root-cause chains, and contextualized comparisons. Architect receives shallow input → produces shallow analysis → entire downstream pipeline works on a shallow foundation.
+
+**DP reference**: DP-49 (upstream gate principle — upstream information loss is unrecoverable downstream)
+
+**Prevention**: 6-dimension quality checklist is the minimum standard. Gate at <= 3/6 by requesting user supplementation rather than routing a shallow prompt.
+
+### F-SEC-2: Preloading strategic direction in routing prompt
+
+**Symptom**: Architect's analysis direction always aligns with secretary's "suggestions" — appears reasonable but architect is validating secretary's hypothesis rather than thinking independently.
+
+**Root cause**: Secretary added "proposal direction," "analytical framework," or "suggested focus" to the routing prompt. Architect has sycophancy tendency toward structured suggestions.
+
+**Prevention**: D5 dimension requires verbatim user text. Secretary provides facts (investigation results) but never interprets them strategically. See the fact-investigation vs strategic-judgment boundary table.
+
+### F-SEC-3: Loading chain breakage — new session skips critical steps
+
+**Symptom**: New session secretary skips preview gate, skips quality checklist, skips task correlation check.
+
+**Root cause**: Detailed protocols are in SKILL.md (Layer 1, loaded on-demand) but Layer 0 (rules/secretary.md) lacks explicit load triggers pointing to them. New session only sees Layer 0.
+
+**DP reference**: DP-56 (file exists ≠ file reachable)
+
+**Prevention**: rules/secretary.md line "Full routing protocol... see /secretary" IS the Layer 0→1 load trigger. If this line is removed or obscured, the entire quality system becomes invisible.
+
+### Additional Failure Modes (summary)
+
+| # | Failure | One-line Prevention |
+|---|---------|-------------------|
+| F-SEC-4 | Template fill-in effect — form-perfect but content-shallow prompts | Use complete filled few-shot, not skeleton examples (DP-63, DP-48) |
+| F-SEC-5 | Self-assessment bias — secretary rates 6/6 but human judges fail | Preview gate = human makes final quality judgment (DP-50) |
+| F-SEC-6 | Conceptual/on-site misclassification — skipping Step 0 investigation | Default to conceptual when ambiguous — cost of extra investigation < cost of shallow prompt (DP-57) |
+| F-SEC-7 | Asking "should I continue?" after agent completes | Auto-advance is default — only pause at defined stops (high-risk/test-fail/design-challenge) |
 
 ---
 
