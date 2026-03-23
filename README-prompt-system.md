@@ -1,3 +1,5 @@
+[中文版](README.zh-CN.md)
+
 # You don't understand your AI agents. This system fixes that.
 
 You've been using AI coding assistants for months. You approve proposals you haven't read. You hit enter on outputs you can't evaluate. You know the code works because the tests pass, but you couldn't explain *why* the agent made that design choice if someone asked you.
