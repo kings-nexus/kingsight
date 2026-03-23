@@ -250,18 +250,32 @@ After completing, write the journal entry and stop.
 
 ## Route: A — Exploration (dispatch to prompt-research scout)
 
-### A.1: TDL Gate Check
+### A.1: Education Gate Check
 
 ```bash
 eval $(~/.claude/skills/gstack/bin/gstack-slug 2>/dev/null) || true
-cat "$HOME/.gstack/projects/${SLUG:-prompt-system}/user-tier.json" 2>/dev/null || echo '{"tier": 0}'
+_TIER_FILE="$HOME/.gstack/projects/${SLUG:-prompt-system}/user-tier.json"
+if [ -f "$_TIER_FILE" ]; then
+  echo "TIER_FILE_EXISTS"
+  cat "$_TIER_FILE"
+else
+  echo "NO_TIER_FILE"
+fi
 ```
 
-If user tier is sufficient for the operation, proceed. If insufficient, offer three options:
+If `NO_TIER_FILE`: skip gate entirely (fail-open). Proceed to A.2.
 
-AskUserQuestion: "This operation benefits from understanding [concept]. Your current tier is T[N]. Options: A) Learn now (~5-10 min), B) Skip and continue (logged as Creator Override), C) 30-second overview."
+If `TIER_FILE_EXISTS`: consult the domain-inference table in `.claude/rules/education-gate.md` (already loaded as L3 rule). Determine which domains are required for the target operation being routed. Compare user's tier in each required domain against the minimum tier.
 
-If config is missing or read fails, skip the gate entirely (fail-open).
+**Gate actions by gap size:**
+- **All sufficient** (tier >= required for every domain) → proceed silently to A.2
+- **Gap = 1** (e.g., user tier 0, required 1) → one-line note: "Note: [domain] knowledge recommended for this operation. Send an L-class message to learn (~5 min)." Then proceed to A.2.
+- **Gap >= 2** → full advisory via AskUserQuestion: "This operation benefits from understanding [domain]. Your current tier is T[N]. Options: A) Learn now (~8 min TDL flow), B) Skip and continue (logged as Creator Override), C) 30-second overview only."
+  - If A → redirect to Route L (TDL four-stage flow for that domain)
+  - If B → log Creator Override in secretary journal, proceed to A.2
+  - If C → show the warmup_text from the scenario file for that domain, then proceed to A.2
+
+Creator Override is ALWAYS available. Gate is advisory (DP-72), never blocking.
 
 ### A.2: Fact Investigation
 
@@ -440,9 +454,9 @@ Then write the journal entry and check if there is a natural next step in the pi
 
 ## Route: B — Execution (dispatch to prompt-research or prompt-writer)
 
-### B.1: TDL Gate Check
+### B.1: Education Gate Check
 
-Same as A.1.
+Same protocol as A.1 above. Apply to the B-class target operation.
 
 ### B.2: Task Correlation
 
@@ -530,23 +544,130 @@ Write the journal entry. Auto-advance if there is a clear next step.
 
 ---
 
-## Route: L — Learning
+## Route: L — Learning (TDL Four-Stage Flow)
 
-### L.1: Education System Check
+### L.1: Domain Detection
 
-**Note:** The education system is not yet available. For now, handle L-class messages with a basic explanation.
+Determine which domain the user wants to learn about.
 
-Tell the user: "The education system is not yet built. I can offer a basic explanation of the concept you're asking about, or you can explore it via `/prompt-research scout`."
+If the user specified a topic (e.g., "teach me about ABCDL", "I don't understand the preview gate"):
+- Map their topic to the closest domain: abcdl-classification, preview-gate-quality, adr-constitutional, or team-pipeline-roles
+- If no clear match, show the domain menu below
 
-AskUserQuestion: "Options: A) I'll give a brief factual explanation (no strategic advice), B) Route to prompt-research scout mode to explore this as a research question, C) Skip for now."
+If unclear, show available domains via AskUserQuestion:
 
-If A: provide a factual, concise explanation by reading relevant files from the corpus. Stay within the secretary's permissions — report facts, do not advise.
+```bash
+eval $(~/.claude/skills/gstack/bin/gstack-slug 2>/dev/null) || true
+_TIER_FILE="$HOME/.gstack/projects/${SLUG:-prompt-system}/user-tier.json"
+cat "$_TIER_FILE" 2>/dev/null || echo '{"domains":{}}'
+```
 
-If B: reclassify as A and follow the A route.
+"Which domain would you like to learn about?" List all domains where tier < 2, showing current tier for each.
 
-If C: stop.
+### L.2: Load Scenarios
 
-Write the journal entry either way.
+Read the scenario file for the selected domain:
+
+```bash
+_DOMAIN="[detected-domain-name]"
+cat /home/durden/gstack/education/scenarios/tier1-${_DOMAIN}.json 2>/dev/null || echo "NO_SCENARIOS"
+```
+
+If `NO_SCENARIOS`: fall back to basic explanation. "Scenario bank not available for [domain]. Here is a brief overview instead:" Then provide a factual explanation of the domain (C-class style, no strategic advice). After explaining, return to normal operation.
+
+If scenarios loaded: proceed to L.3.
+
+### L.3: WARMUP (30 seconds)
+
+Display the `warmup_text` from the scenario file. No interaction required.
+
+"**Quick overview of [domain name]:**
+[warmup_text from JSON — 3 sentences covering the core concepts]"
+
+Proceed immediately to L.4.
+
+### L.4: CLOSED-BOOK (~3 minutes)
+
+Present the 3 scenarios from the file, one at a time. Do NOT reveal correct answers yet.
+
+For each scenario:
+"**Scenario [N]:** [scenario text from JSON]
+
+How would you handle this? / What is the correct classification? / What should happen?"
+
+Wait for user response via AskUserQuestion. Record their answer for each scenario.
+
+This is the diagnostic (RED) phase — partial failure is expected and valuable.
+
+### L.5: OPEN-BOOK (~4 minutes)
+
+After all 3 scenarios are answered, reveal results:
+
+For each scenario, show:
+```
+**Scenario [N] Review:**
+- Your answer: [what user said]
+- Correct answer: [correct_answer from JSON]
+- Reasoning: [reasoning from JSON]
+```
+
+If the user's answer was wrong, also show:
+```
+- Why your answer differs: [relevant distractor explanation from JSON]
+```
+
+Framing (DP-73 system-centric): "2 of 3 scenarios had gaps in [weak_area]. The review above covers these." NOT "You got 2 wrong."
+
+### L.6: VERDICT (30 seconds, self-assessment per DP-74)
+
+Present a self-assessment checklist derived from the scenarios:
+
+"**Self-Assessment — [domain name]:**
+After reviewing the scenarios above, check the statements you feel confident about:
+
+[ ] [capability statement derived from scenario 1's core concept]
+[ ] [capability statement derived from scenario 2's core concept]
+[ ] [capability statement derived from scenario 3's core concept]"
+
+AskUserQuestion with lettered options for each statement (check/uncheck).
+
+### L.7: Tier Update
+
+Based on VERDICT results and CLOSED-BOOK performance:
+
+**Tier advancement rule:**
+- User checks ALL items → tier advances (0→1 or 1→2)
+- User checks fewer than all → tier stays, unchecked items become weak_areas
+
+**Path determination:**
+- CLOSED-BOOK 2-3/3 correct → path: "independent"
+- CLOSED-BOOK 0-1/3 correct but all VERDICT checked → path: "guided"
+  (guided path gets advisory at gap >= 1 instead of gap >= 2)
+
+Update user-tier.json:
+
+```bash
+eval $(~/.claude/skills/gstack/bin/gstack-slug 2>/dev/null) || true
+_TIER_FILE="$HOME/.gstack/projects/${SLUG:-prompt-system}/user-tier.json"
+# The actual tier value, path, weak_areas, and date will be determined
+# by the VERDICT results above. Use python3 for reliable JSON update:
+python3 << 'PYEOF'
+import json
+from datetime import date
+tier_file = "$_TIER_FILE"  # shell variable expanded before heredoc
+# Read, update domain, write back
+# Secretary fills in: domain, new_tier, path, weak_areas from L.6 results
+PYEOF
+```
+
+Note: The bash/python block above is a template. When executing, the secretary fills in the actual domain name, new tier value, path, and weak_areas list based on the VERDICT and CLOSED-BOOK results from L.4-L.6.
+
+Report to user:
+"**[Domain] assessment complete.**
+Tier: T[old] → T[new] | Path: [independent/guided]
+[If weak_areas]: Areas to revisit next time: [list]"
+
+Then return to normal secretary operation. If the user was redirected here from A.1 Education Gate (gap >= 2 advisory, chose "Learn now"), resume the original A-class routing from A.2.
 
 ---
 
