@@ -1,3 +1,5 @@
+[English version](article-cache-system.en.md) · [← 回到项目主页](../README.zh-CN.md)
+
 # 你一直在建缓存系统，只是你没意识到
 
 不知道大家在使用 Claude Code 的时候有没有发现——我们其实一直在做一件事：建立缓存系统。

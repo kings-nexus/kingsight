@@ -1,4 +1,4 @@
-[中文版](README.zh-CN.md) · [How we got here: the cache system article](docs/article-cache-system.md)
+[中文版](README.zh-CN.md) · [The story behind this project](docs/article-cache-system.en.md)
 
 # You don't understand your AI agents. This system fixes that.
 
