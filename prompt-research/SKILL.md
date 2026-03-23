@@ -1,12 +1,16 @@
 ---
 name: prompt-research
-version: 1.0.0
+version: 1.1.0
+model: opus
 description: |
   Prompt engineering research through controlled experiments. Four modes:
   scout (hypothesis generation), experiment (controlled execution),
   distill (knowledge extraction + level upgrades), deploy (production
   injection + eval verification). Maintains a persistent knowledge
   hierarchy: L1 Tactic → L2 Principle → L3 Constitution.
+
+  MUST run on Opus — research quality determines the knowledge hierarchy
+  that shapes all other agents. Weak research compounds into weak skills.
 allowed-tools:
   - Bash
   - Read
@@ -324,7 +328,7 @@ Groups:
   Treatment B: [description] (if needed)
 
 Control Variables:
-  Model: Claude Sonnet 4 (primary)
+  Model: Claude Opus 4.6 (primary)
   Cross-model: Gemini 2.5 Pro (if available)
   Temperature: 0.7
   Test task: [Task A/B/C or custom — state which and why]
@@ -425,7 +429,7 @@ Write to `~/.gstack/prompt-research/experiments/EXP-NNN.json`:
       {"name": "treatment_a", "prompt": "FULL PROMPT TEXT"}
     ],
     "control_variables": {
-      "model": "claude-sonnet-4",
+      "model": "claude-opus-4-6",
       "temperature": 0.7,
       "task": "Task B (constrained metaphor writing)"
     },

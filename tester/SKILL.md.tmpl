@@ -1,12 +1,16 @@
 ---
 name: tester
-version: 1.0.0
+version: 1.1.0
+model: opus
 description: |
   Prompt fidelity auditor and quality gate. Runs structural verification
   (bun test, gen-skill-docs, skill:check), then performs 6-dimension semantic
   audit including DESIGN-DRIFT and DOC-DRIFT detection. Reports findings to
   developer for fix — never self-repairs. Escalates to architect after 3
   failed fix rounds.
+
+  MUST run on Opus — testing is the single success criterion for the project.
+  Never downgrade to a weaker model.
 allowed-tools:
   - Read
   - Grep
@@ -195,10 +199,11 @@ If 0 scenario files: output "Tier 3: No scenario files found in test/scenarios/.
    - Match → run this scenario
    - No match → skip ("not triggered by current changes")
 
-3. **Execute matched scenarios**: For each triggered scenario, launch a subagent:
+3. **Execute matched scenarios**: For each triggered scenario, launch a subagent with `model: "opus"` (testing quality must not degrade with weaker models):
 
 ```
 Agent(
+  model="opus",
   prompt="You are a [scenario.agent] agent being tested.
 
   Read your skill template at /home/durden/gstack/[scenario.agent]/SKILL.md
