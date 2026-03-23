@@ -1,4 +1,4 @@
-[English](README-prompt-system.md)
+[English](README-prompt-system.md) · [这个项目怎么来的：缓存系统那篇文章](docs/article-cache-system.md)
 
 # 你根本不理解你的 AI 助手在做什么
 
