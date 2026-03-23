@@ -1,231 +1,169 @@
 # Prompt Engineering System
 
-A systematic approach to prompt engineering — research, education, and tooling built on top of [gstack](https://github.com/garrytan/gstack)'s agent team architecture and inspired by [everything-claude-code](https://github.com/affaan-m/everything-claude-code)'s self-evolution patterns.
+An AI-driven development system where agents teach you the project before letting you change it.
 
-**This is not a prompt library.** It's a research-driven system where every technique is validated through controlled experiments, graded through a knowledge hierarchy (L1 Tactic → L2 Principle → L3 Constitution), and deployed with measured impact.
+**The problem**: AI coding tools let you ship fast without understanding what you're building. You approve proposals you don't understand, skip past agent outputs, and "default to enter." Eventually your guidance degrades the project because you can't evaluate what the agents produce. The automation-cognition gap widens with every session.
 
-## What's built
+**The solution**: A team of 6 specialized AI agents coordinated by a secretary, with a built-in education system that ensures you understand what you're directing. The system doesn't block you — it teaches you, then gets out of the way.
 
-### /prompt-research — Systematic Prompt Research Agent
+## Start here: the education system
 
-A new agent role that discovers which prompt techniques work, why they work, and when they fail.
-
-**Four modes:**
-
-| Mode | Command | What it does |
-|------|---------|-------------|
-| **Scout** | `/prompt-research scout` | Generate testable hypotheses from literature gaps and existing findings |
-| **Experiment** | `/prompt-research experiment` | Design and execute controlled A/B experiments with cross-model validation |
-| **Distill** | `/prompt-research distill` | Extract findings from experiments, evaluate level upgrades (L1→L2→L3) |
-| **Deploy** | `/prompt-research deploy` | Inject validated findings into production skill templates, measure eval delta |
-
-**Founded on 22 literature methods (35+ papers), 4 completed experiments, and 5 validated findings:**
-
-- **F-003 (L2 Principle):** Poetic/metaphor prompt re-encoding improves creative output +52% (cross-model validated on Claude + Gemini)
-- **F-001 (L1 Tactic):** Positive mission framing stabilizes reasoning quality
-- **C-001:** Style as Vector — use poetic style for creative prompts
-- **C-002:** Mission Micro-Injection — append ≤40 token mission statement
-- **C-003:** Inverted-U Awareness — more is not always better
-- **C-004:** Task-Technique Matching — no universal optimal prompt
-
-**14 cognitive patterns** guide the researcher's instincts: confound paranoia, effect size discipline, mechanism hunger, cross-model suspicion, inverted-U vigilance, baseline discipline, evaluator independence, and more.
-
-**Three core mechanisms** classify all prompt techniques:
-1. **Anchoring** — examples/style/structure anchor output standards
-2. **Motivation Activation** — emotion/identity/mission activate higher investment
-3. **Representation Shift** — style/structure/framework shift output patterns
-
-### /architect — Four-Phase Dialectical Protocol
-
-Strategic thinker that discovers problems, proposes solutions, then attacks them until only survivors remain.
+When you first use this project, the system notices you haven't been assessed on its core concepts. Before routing your requests to the agent team, it offers a quick learning flow:
 
 ```
-Phase 1 AUDIT     → evidence-forced findings, root-cause chains
-Phase 2 ENVISION  → paradigm detection, LLM reliability check, proposal templates
-Phase 3a          → 5-angle self-challenge (ADR/Occam/worst-case/coupling/generalizability)
-Phase 3b          → Gemini CLI cross-model adversarial (1 round, degradation to subagent)
-Phase 4 META      → self-evolution + KC promotion (constrained by 7 structural invariants)
+You: "I think we should redesign the architect's Phase 3"
+
+Secretary: This operation benefits from understanding ABCDL classification.
+  Your current tier: T0 (unassessed). Options:
+  A) Learn now (~8 min)
+  B) Skip and continue
+  C) 30-second overview
 ```
 
-Three modes: governance audit (full 4-phase), strategic input (skip Phase 1), proposal retrospective.
-Architect reads and proposes — never modifies files directly. Proposals go through ADR-006 review.
-
-### /tester — Prompt Fidelity Auditor
-
-Last line of defense. Three-tier verification: structural (bun test gate), semantic (6-dimension audit including DESIGN-DRIFT and DOC-DRIFT detection), behavioral (E2E via subagent scenarios in `test/scenarios/*.yaml`). Reports findings to developer — never self-repairs. Explicit 3-round escalation to architect.
-
-### /developer — Faithful PRD Implementation
-
-Implements researcher PRDs by modifying skill templates, governance docs, scripts, and rules. Five output categories with independent constraint sets. Three-tier deviation reporting — prompt template files use binary exact/deviation (no structural match: every wording change is semantic).
-
-Does not write tests (tester exclusive). CLAUDE.md modification requires separate dedicated PRD.
-
-### /researcher — Proposal-to-PRD Translation Layer
-
-Translates APPROVED architect proposals into executable PRDs with section-path modification specs, before/after content blocks, and tiered acceptance criteria (static/validation/E2E).
-
-Single-mode design: one proposal in, one PRD out. Section paths replace line numbers (gen-skill-docs invalidates line refs). No external research — gaps noted as dependencies for architect/prompt-research.
-
-### /steward — Governance Reviewer
-
-Reviews architect proposals for conflicts, dependencies, and priorities. Five verdicts: approve, reject, defer, needs-split, or needs-revision. Can challenge architect proposals via C-A/C-B design challenges (shared format in `docs/governance/challenge-format.md`).
-
-Three modes: proposal review, batch plan (for coupled proposals), status report.
-Advisory role — human always has final authority. MAX_REVISION_ROUNDS=1, then escalate to human.
-
-### /secretary — Routing Hub (Entry Point)
-
-The secretary is the main entry point. It classifies every user message and routes to the correct agent. It does NOT make decisions — only forwards and fact-finds.
-
-**ABCDL classification:**
-
-| Category | Intent | Routes to |
-|----------|--------|-----------|
-| **A** | Exploration/thinking ("I think...", "what if...") | prompt-research scout |
-| **B** | Execution ("run experiment", "write a prompt") | prompt-research or prompt-writer |
-| **C** | Query ("what is F-003", "show status") | Secretary answers directly |
-| **D** | Continue ("next step", "approve") | Resume active pipeline |
-| **L** | Learning ("teach me...", "I don't understand...") | Education system |
-
-- Fuzzy/ambiguous messages default to **A** (think before act)
-- Preview gate on A/B/L routes — shows routing plan, waits for confirmation
-- Session journaling in JSONL for cross-session continuity
-- TDL tier gate with fail-open (never blocks the user)
-
-### /stack — Call Stack Visibility
-
-See where you are in the project, what's done, what's next. Persistent across sessions at `~/.gstack/projects/$SLUG/callstack.md`.
+If you choose **A**, the system runs a Test-Driven Learning flow — like TDD but for understanding:
 
 ```
-/stack          # full view — grouped by theme, dependency indicators
-/stack brief    # compact — fold completed themes, show frontier + blocked
-/stack next     # show tasks whose prerequisites are all met
-/stack update   # mark done + deviation detection + auto-unblock
-/stack init     # create new graph (or migrate from old callstack.md)
-/stack add      # add task with dependencies
-/stack graph    # ASCII dependency visualization (experimental)
+WARMUP (30s)      → Quick overview of the concept
+CLOSED-BOOK (3min) → 3 scenario-based questions (not definitions — real situations)
+OPEN-BOOK (4min)   → Reveals answers with reasoning chains (the exam IS the lesson)
+VERDICT (30s)      → Self-assessment checklist — you decide if you understood
 ```
 
-State is a YAML DAG (`taskgraph.yaml`) with dependency tracking:
+After completing a domain, your tier advances and the advisory disappears for that area. The system never blocks you (Creator Override is always available) — it advises, teaches, and steps aside.
 
-```yaml
-tasks:
-  "2.14":
-    title: "验证秘书分类"
-    status: pending
-    blockedBy: ["2.13"]    # dependency
-    theme: agents           # grouping
+**4 Golden Rules domains** you'll learn first:
+1. **ABCDL classification** — how your messages get routed to the right agent
+2. **Preview gate & routing quality** — why the system shows you its plan before acting
+3. **ADR & constitutional protection** — how design decisions are protected from accidental reversal
+4. **Team pipeline & role boundaries** — which agent does what and why they don't cross lanes
+
+## The agent team
+
+Six specialists, each covering one domain. The secretary routes; the others execute.
+
+```
+User message → Secretary (classify + route)
+                    ↓
+    ┌───────────────┼───────────────┐
+    A/B class       C class         L class
+    ↓               ↓               ↓
+  Agent team      Direct answer   Education
+    ↓
+  Architect → Steward → Researcher → Developer → Tester → commit
 ```
 
-- **HEAD** = last completed task. **NEXT** = computed frontier (all deps met)
-- **Deviation detection**: skip a prerequisite → system asks why (ADR-005 advisory, not blocking)
-- **Themes**: tasks grouped by domain (infrastructure, agents, governance, education)
-- Shares infrastructure with future education system via `{{TASKGRAPH_CORE}}`
+| Agent | What it does | Key feature |
+|-------|-------------|-------------|
+| **Secretary** | Routes every message (ABCDL), constructs high-quality prompts for agents | 6-dimension quality checklist, preview gate, education tier check |
+| **Architect** | Discovers problems, proposes solutions, attacks its own proposals | 4-phase dialectical protocol, Gemini cross-model adversarial, 7 structural invariants |
+| **Steward** | Reviews proposals for conflicts, dependencies, priorities | C-A/C-B design challenges, batch plan for coupled proposals |
+| **Researcher** | Translates approved proposals into precise implementation specs (PRDs) | Section-path addressing, before/after content blocks, 3-tier verification criteria |
+| **Developer** | Faithfully implements PRDs, reports any deviations | 5 output categories, prompt word fidelity (every wording change is semantic) |
+| **Tester** | Verifies implementation matches design intent | 6-dimension defect audit, DESIGN-DRIFT/DOC-DRIFT detection, E2E scenario testing |
 
-### Education System — TDL (Test-Driven Learning)
+### How they work together
 
-AI-driven learning system that breaks the automation-cognition decoupling loop. Users must understand the project to guide it effectively.
+The team is a pipeline with feedback loops:
 
-- **Tiered authorization**: T0 (unassessed) → T1 (basic) → T2 (sufficient). Advisory gating, never blocking (DP-72). Creator Override always available.
-- **TDL four stages**: WARMUP (30s overview) → CLOSED-BOOK (3 scenario simulations) → OPEN-BOOK (reveal + teach) → VERDICT (self-assessment checklist, DP-74)
-- **4 Golden Rules domains**: ABCDL classification, preview gate quality, ADR constitutional protection, team pipeline roles
-- **Scenario bank**: 12 seed scenarios in `education/scenarios/`, JSON format with reasoning + distractors + weak_area tags
-- **Domain-inference**: maps operations to required knowledge domains, secretary checks tier before routing
-- **Gaming-convergent**: pre-reading scenarios IS studying the material — every cheat path converges to learning
+- **Forward flow**: architect proposes → steward approves → researcher writes PRD → developer implements → tester verifies → commit
+- **Challenge loop**: steward can send proposals back to architect for revision (max 1 round, then human decides)
+- **Fix loop**: tester can send failures back to developer (max 3 rounds, then escalate to architect)
+- **Flat management**: any agent can challenge any other agent or the human (ADR-005). Challenges must be fact-based.
 
-## Architecture decisions
+### Prompt research
 
-### Independent project, not a fork
+A dedicated agent (`/prompt-research`) that discovers which prompt techniques actually work:
 
-This project takes **design ideas** from gstack and ECC, not runtime dependencies:
-- From gstack: cognitive patterns methodology, SKILL.md.tmpl template system, interactive workflows
-- From ECC: continuous-learning philosophy, confidence scoring, knowledge leveling
-- Neither codebase is a dependency — we extract patterns and build our own
+- **Scout**: generate hypotheses from literature gaps
+- **Experiment**: controlled A/B tests with cross-model validation (Claude + Gemini)
+- **Distill**: extract validated findings into a knowledge hierarchy (L1 Tactic → L2 Principle → L3 Constitution)
+- **Deploy**: inject proven techniques into production skill templates, measure impact
 
-### Three AI invocation paths
+Founded on 22 literature methods (35+ papers) and 5 validated findings including: poetic prompt re-encoding (+52% creative output, cross-model validated) and mission micro-injection for reasoning stability.
 
-| Path | When | Auth |
-|------|------|------|
-| **Subagent** (Agent tool) | Agent team development, testing, all dev workflows | Inherits session — **no API key needed** |
-| **CLI subprocess** (`claude -p`) | Multi-model, stateful sessions, content production | CLI's own OAuth |
-| **Hybrid** | Subagent orchestrates + CLI generates | Both |
+## Governance
 
-**Rule: Agent team work always uses subagent.** Never require API keys for development or testing.
+Decisions aren't just made — they're protected.
 
-### ABCDL message classification
+- **ADR** (Architecture Decision Records): settled decisions that prevent re-litigation. Currently 9.
+- **DP** (Design Principles): cross-cutting lessons accumulated via KC-1~4 criteria. Currently 16.
+- **DF** (Deferred Items): rejected-but-valuable ideas with observable trigger conditions for revival. Currently 11.
+- **Constitutional protection** (ADR-006): no single party — human or agent — can unilaterally modify ADRs. Changes require multi-party review.
 
-Every user message is classified before routing (ADR-004):
-- **A** (exploration) and **B** (execution) are the key distinction — "thinking vs doing"
-- **C** (query) and **D** (continue) are lightweight — no agent dispatch needed
-- **L** (learning) routes to the education system — the project's core entry point
-- Fuzzy defaults to A: over-think rather than over-execute
+## Task tracking
 
-### One agent, one domain (revised from "one task")
+`/stack` provides DAG-based task tracking with dependency awareness:
 
-Each agent covers one cohesive domain, not one output type. The secretary handles routing + routing prompt construction (these are inseparable). The researcher handles technique validation + template injection. No separate prompt-writer agent — that capability is split between secretary (routing prompts) and prompt-research deploy (template optimization). See ADR-003 revision.
+```
+/stack          # view tasks grouped by theme with dependency indicators
+/stack brief    # compact view — just the frontier and blocked items
+/stack next     # what's available to work on right now
+/stack update   # mark done (with deviation detection if you skip prerequisites)
+/stack graph    # ASCII dependency visualization
+```
 
-### Flat management, not dictatorship (ADR-005)
+Tasks know what blocks what. Skip a prerequisite and the system asks why (advisory, not blocking).
 
-Agents can challenge humans. Subagents can push back on the secretary. The relationship is collaborative, not hierarchical. Challenges must be fact-based with a round limit — exceed it and escalate to human.
+## Design philosophy
 
-### Constitutional protection (ADR-006)
+**Agents can say no.** This isn't a traditional AI assistant that obeys every instruction. Agents challenge humans when instructions conflict with established architecture (ADR-005). The secretary evaluates whether you understand what you're asking for (education gate). The system is collaborative, not hierarchical.
 
-ADRs and L3 design principles are "constitutional" — no single party (human or agent) can modify them unilaterally. Changes require: proposal → architect evaluation → human review → approval. Unapproved changes are invalid and should be rolled back.
+**One good example beats ten rules.** Every agent template prioritizes few-shot examples over abstract instructions (DP-63). The education system's scenarios are real situations, not definitions. The secretary's routing prompt quality is anchored by a complete filled example, not a skeleton template.
 
-### Knowledge governance
+**Fix mechanisms, not analysis.** When something goes wrong, the deliverable is a structural fix (code, config, checklist), not a root cause report (DP-7). Analysis is the means, not the end.
 
-Architecture decisions recorded as ADRs. Design principles accumulated via KC-1~4 criteria. Deferred items tracked with observable trigger conditions. See `docs/governance/`.
+**Advisory, not blocking.** Every gate in the system is advisory (DP-72). Creator Override is always available. The education system never prevents you from working — it teaches, then steps aside.
 
-## Roadmap
+## Quick start
 
-| Phase | What | Status |
-|-------|------|--------|
-| 1 | /secretary (ABCDL routing hub) | Done |
-| 2 | /prompt-research (research tool) | Done |
-| 3 | /stack (call stack visibility) | Done |
-| 4 | Knowledge governance (ADR + DP + DF + KC) | Done |
-| 5 | Secretary as default entry point (L2 identity in CLAUDE.md) | Done |
-| 6 | Education system (core entry point — learn before you use) | Planned |
-| 7 | Continuous learning (self-evolution from practice) | Deferred (DF-001) |
-| 8 | Multi-session coordination (5-layer system) | Designed, not built |
-| 9 | Independent project scaffold | Planned |
+1. Install gstack: `git clone https://github.com/garrytan/gstack.git ~/.claude/skills/gstack && cd ~/.claude/skills/gstack && ./setup`
+2. Start a conversation. The secretary will classify your first message and guide you.
+3. When the education gate triggers, try "Learn now" — it takes 8 minutes per domain.
+4. After completing the 4 Golden Rules domains (~30 min total), the system runs silently.
+
+## Project structure
+
+```
+secretary/           # Routing hub + education gate + TDL flow
+architect/           # Four-phase dialectical protocol
+steward/             # Governance review + design challenges
+researcher/          # Proposal-to-PRD translation
+developer/           # Faithful PRD implementation
+tester/              # 6-dimension fidelity audit + E2E scenarios
+prompt-research/     # Prompt technique research (scout/experiment/distill/deploy)
+stack/               # DAG task tracking with deviation detection
+education/scenarios/ # TDL scenario bank (JSON, per domain)
+docs/governance/     # ADR, DP, DF, KC, challenge-format
+.claude/rules/       # L3 rules (secretary identity, education gate, commit style, etc.)
+test/scenarios/      # E2E behavioral test scenarios (YAML)
+```
 
 ## For contributors
 
-### Commands
-
 ```bash
 bun install              # install dependencies
-bun test                 # run free tests (skill validation + snapshot)
+bun test                 # run free tests (320 pass, <1s)
 bun run gen:skill-docs   # regenerate SKILL.md from templates
-bun run skill:check      # health dashboard
+bun run skill:check      # health dashboard for all skills
 ```
 
-### Project structure (new skills)
+Bisect commits — each commit is one logical change. Infrastructure separate from features.
 
-```
-secretary/               # /secretary routing hub (entry point)
-  SKILL.md.tmpl
-  SKILL.md
-prompt-research/         # /prompt-research agent
-  SKILL.md.tmpl          # template source (edit this)
-  SKILL.md               # generated (don't edit)
-stack/                   # /stack visibility tool
-  SKILL.md.tmpl
-  SKILL.md
-docs/governance/         # ADR, DP, DF, KC frameworks
-  ADR.md
-  DP.md
-  DF.md
-subproject/              # reference repos (.gitignored)
-  everything-claude-code/
-  prompt_alchemy_reference.md
-```
+## Status
 
-### Commit style
+**v0.1 — MVP**
 
-Bisect commits — each commit is one logical change. Infrastructure separate from features, templates separate from generated files.
+| Component | Status |
+|-----------|--------|
+| Agent team (6 agents + secretary) | Complete |
+| Education system (TDL + 12 scenarios + gate) | Complete (MVP) |
+| Governance (9 ADR + 16 DP + 11 DF) | Complete |
+| Task tracking (DAG + deviation detection) | Complete |
+| Prompt research (4 modes + knowledge hierarchy) | Complete |
+| E2E scenario testing (6 scenarios + tester Tier 3) | Complete |
+| Multi-session coordination | Designed, not built |
+| Continuous learning (self-evolution) | Deferred |
 
 ## License
 
-MIT — same as gstack.
+MIT
