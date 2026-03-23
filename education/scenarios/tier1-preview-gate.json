@@ -1,0 +1,40 @@
+{
+  "domain": "preview-gate-quality",
+  "tier": 1,
+  "warmup_text": "Before dispatching any A/B/L route, the secretary must show a mandatory preview gate (Classification, Target, Mode, Task prompt) and wait for user confirmation. The routing prompt itself is quality-gated by a 6-dimension checklist: D1 data points, D2 root-cause chain, D3 comparison, D4 file paths, D5 user verbatim, D6 existing item reference.",
+  "scenarios": [
+    {
+      "id": "preview-gate-1",
+      "scenario": "Secretary classifies a message as A-class and immediately calls Agent tool to dispatch to architect without showing any routing plan. Is this correct behavior?",
+      "correct_answer": "No — A/B/L routes require mandatory preview gate. Secretary must show the routing plan (Classification, Target, Mode, Task prompt) and wait for user confirmation before dispatching. C and D routes are exempt because they do not involve agent dispatch.",
+      "reasoning": "The secretary rules state: 'Before calling Agent tool to dispatch ANY A/B/L route, you MUST first show [routing plan]. Wait for user response. Do NOT call Agent tool until user confirms.' And: 'If you find yourself calling Agent tool without having shown a routing plan in the same message — you are violating this gate.' The gate is described as 'NOT optional, NOT skippable'.",
+      "distractors": {
+        "Yes — auto-advance means no confirmation needed": "Auto-advance applies to D-class pipeline continuation (e.g., after an agent completes, secretary auto-advances to the next pipeline step). It does NOT apply to new A/B/L routes. Auto-advance and preview gate serve different purposes: auto-advance reduces unnecessary pauses in an established pipeline; preview gate ensures quality on new dispatches.",
+        "Yes — A-class is low-risk exploration so gate can be skipped": "The preview gate applies to ALL A/B/L routes regardless of risk level. The gate exists not just for risk management but for routing quality — it lets the user verify the routing prompt before it reaches the target agent (preventing F-SEC-1 shallow routing cascade)."
+      },
+      "weak_area_if_wrong": "Preview gate is mandatory for A/B/L, exempt for C/D"
+    },
+    {
+      "id": "preview-gate-2",
+      "scenario": "Secretary constructs this A-class routing prompt: \"User thinks architect should be redesigned. Routing to architect.\" Does this meet quality standards for dispatch?",
+      "correct_answer": "No — fails at least 4 of 6 quality dimensions. D1 (no data points — no version numbers, file names, line counts, or scores), D2 (no root-cause chain — no X <- Y <- Z analysis), D3 (no comparison — no current/proposed/delta), D4 (no file paths — zero precise file-level references). At <=3/6 PASS, secretary must ask the user for additional information rather than proceeding.",
+      "reasoning": "The 6-dimension quality checklist requires: D1 >= 3 verifiable specifics, D2 >= 1 root-cause chain, D3 >= 1 comparison set, D4 >= 3 file paths, D5 user verbatim, D6 existing item reference. This prompt has at best D5 (paraphrased, not even verbatim). Quality gating rules: 6/6 = proceed, 4-5/6 = secretary supplements, <=3/6 = ask user for more information. This prompt is <=3/6, triggering the user supplementation gate.",
+      "distractors": {
+        "Yes — it captures the user's intent": "Capturing intent is only D5 (user verbatim), and even that is done poorly here — 'User thinks architect should be redesigned' is a paraphrase, not the user's original words. D5 requires 'original user text preserved exactly — no rewriting, no abbreviating.' One dimension out of six is far below the quality threshold.",
+        "It needs minor improvement but can proceed": "This is not a 4-5/6 case where secretary supplements. It is <=3/6 — the prompt lacks data points, root-cause analysis, comparison, and file paths. The quality gating rule is explicit: <=3/6 means AskUserQuestion requesting additional information, not proceed with supplements."
+      },
+      "weak_area_if_wrong": "6-dimension quality checklist awareness — understanding what each dimension requires"
+    },
+    {
+      "id": "preview-gate-3",
+      "scenario": "A routing prompt has data points (3 specifics), file paths (4 references), user verbatim text (exact quote), and an existing task reference (task 2.20). But it lacks any root-cause chain and has no comparison set. Score is 4/6 PASS. What should the secretary do?",
+      "correct_answer": "Secretary should supplement the missing D2 (root-cause chain) and D3 (comparison) before proceeding to preview gate. At 4-5/6 PASS, the secretary's job is to investigate and add the missing dimensions — construct at least one root-cause chain (X <- Y <- Z, data-supported) and one comparison set (current/proposed/delta three-part format) — then proceed to preview gate with the enriched prompt.",
+      "reasoning": "Quality gating has three tiers: 6/6 = proceed, 4-5/6 = secretary supplements the missing dimensions before proceeding, <=3/6 = ask user for more. At 4/6, the prompt is above the 'ask user' threshold but below 'ready to dispatch'. The secretary's role is to use its fact-investigation capabilities (Read/Grep/Glob) to fill in D2 and D3, not to skip them or ask the user to do the work.",
+      "distractors": {
+        "Proceed as-is since 4/6 is above the <=3 threshold": "Being above <=3/6 means the secretary does not need to ask the user for help. But 4-5/6 is NOT 'good enough to proceed' — it means 'secretary supplements before proceeding.' The three tiers are distinct actions, not just pass/fail.",
+        "Ask the user to provide root-cause chain and comparison": "Asking the user is the <=3/6 action. At 4/6, the secretary has enough context to investigate and supplement on its own using Read/Grep/Glob. Asking the user at this level is unnecessarily burdensome and misapplies the quality gate."
+      },
+      "weak_area_if_wrong": "Understanding the 4-5/6 PASS gate action: secretary supplements, does not skip or escalate"
+    }
+  ]
+}

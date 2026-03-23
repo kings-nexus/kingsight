@@ -1,0 +1,40 @@
+{
+  "domain": "abcdl-classification",
+  "tier": 1,
+  "warmup_text": "Every user message is classified into A (exploration/thinking), B (clear execution), C (info query), D (flow control), or L (learning). The key A-vs-B distinction: A = undecided/exploring, B = decided/specific action. When ambiguous, always default to A (think before act).",
+  "scenarios": [
+    {
+      "id": "abcdl-1",
+      "scenario": "User sends: \"I think we should redesign the architect's Phase 3 to include a third attack model\"",
+      "correct_answer": "A",
+      "reasoning": "The phrase 'I think we should' signals an undecided hypothesis, not a concrete instruction. The user is exploring an idea, not commanding execution. Per classification rules: fuzzy/ambiguous defaults to A, and A vs B hinges on 'I wonder if...' (A) vs 'do this specific thing' (B). 'I think we should' is exploratory language even though 'redesign' sounds action-oriented.",
+      "distractors": {
+        "B — 'redesign' sounds like an execution instruction": "The verb 'redesign' is wrapped in 'I think we should', which is hypothesis framing. B requires a concrete, actionable instruction — vague goals are A. The user has not decided yet; they are floating an idea.",
+        "C — user is asking about Phase 3": "The user is not asking 'what is Phase 3' (information query). They are proposing a change to it. C = 'what is X', not 'what if we changed X'."
+      },
+      "weak_area_if_wrong": "A-vs-B distinction when message contains both opinion and action language"
+    },
+    {
+      "id": "abcdl-2",
+      "scenario": "User sends: \"What does DESIGN-DRIFT mean?\"",
+      "correct_answer": "C",
+      "reasoning": "This is a factual definition query — the user wants to know what a specific term means. Per the ABCDL table: C = 'what is X', answered directly by secretary. L trigger phrases are 'teach me', 'I want to learn', 'I don't understand', 'how does X work'. A single-concept definition lookup is C-class. L is for systematic learning requests like 'teach me the 6-dimension checklist' or 'I don't understand how the challenge-revision loop works'.",
+      "distractors": {
+        "L — 'what does X mean' is a learning request": "The boundary between C and L: C gets a direct factual answer (one definition, one status check). L triggers the education flow for systematic understanding. 'What does X mean' is a lookup, not a learning journey. If the user said 'I don't understand design drift and want to learn how to detect it', that would be L.",
+        "A — user might be exploring a concept": "A = exploration/hypothesis ('I think...', 'what if...'). The user is not hypothesizing or exploring — they want a definition. No routing needed; secretary answers directly."
+      },
+      "weak_area_if_wrong": "C-vs-L boundary — when does a question become a learning request"
+    },
+    {
+      "id": "abcdl-3",
+      "scenario": "User sends: \"approved\" (after seeing a routing plan preview with Classification, Target, Mode, and Task prompt)",
+      "correct_answer": "D",
+      "reasoning": "D = flow control — 'continue', 'approve', 'choose A'. The user is responding to a preview gate confirmation prompt, resuming an active pipeline. Per the ABCDL table: D requires an active pipeline with a pending next step, which is exactly the case here — secretary showed a routing plan and is waiting for confirmation. 'Approved' resumes the dispatch.",
+      "distractors": {
+        "B — 'approved' sounds like an execution command": "'Approved' is not initiating a new action; it is responding to a system gate. The distinction: B = user brings a new instruction ('deploy F-003'). D = user responds to a system prompt ('approved', 'continue', 'next step'). The preview gate is the active pipeline; 'approved' resumes it.",
+        "C — user is confirming information": "C = information query ('what is X', 'show status'). The user is not asking for information — they are giving permission to proceed. This is flow control, not a query."
+      },
+      "weak_area_if_wrong": "D-class recognition — user responses to system prompts are flow control"
+    }
+  ]
+}

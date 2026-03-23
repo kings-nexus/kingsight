@@ -1,0 +1,40 @@
+{
+  "domain": "team-pipeline-roles",
+  "tier": 1,
+  "warmup_text": "The agent pipeline flows: architect (diagnose/propose) -> steward (review/challenge) -> researcher (PRD generation) -> developer (implement) -> tester (verify). The secretary routes between them and auto-advances after each completion. Agents stay within their domain boundaries — steward evaluates but does not design, developer implements but does not self-modify designs, architect proposes but does not implement.",
+  "scenarios": [
+    {
+      "id": "team-pipeline-1",
+      "scenario": "Architect just completed a Mode 1 audit and produced 3 proposals (all marked PENDING REVIEW). What happens next in the pipeline?",
+      "correct_answer": "Secretary auto-advances to steward review. Per the Architect -> Steward flow: secretary checks architect's report for proposal count, and if proposals were generated with PENDING REVIEW status, auto-routes to steward review. Steward reads architect-proposals.md, evaluates each proposal (verdicts: APPROVED, REJECTED, DEFERRED, NEEDS-REVISION, NEEDS-SPLIT), then approved proposals flow to researcher for PRD generation.",
+      "reasoning": "The secretary's Agent Pipeline section specifies: 'After architect completes and reports: 1. Check architect report for proposal count, 2. If proposals were generated (any PENDING REVIEW): auto-route to steward review, 3. If no proposals: no auto-advance.' Auto-advance is the default behavior — secretary does not ask 'should I route to steward?' The pipeline sequence is architect -> steward -> researcher -> developer -> tester.",
+      "distractors": {
+        "Proposals go directly to developer for implementation": "This skips two critical pipeline stages: steward review (quality gate) and researcher PRD generation (specification). The steward exists precisely to catch proposals with invalid mechanisms (C-A) or incorrect premises (C-B) before implementation begins. Skipping steward review means flawed proposals reach implementation unchallenged.",
+        "User must manually decide what to route next": "Auto-advance is the secretary's default behavior after agent completion. The secretary only pauses for: high-risk decisions, test failures, or ambiguous classification. Routing to steward after architect produces proposals is not ambiguous — it is the defined pipeline flow. Asking the user 'should I continue?' is explicitly listed as failure mode F-SEC-7."
+      },
+      "weak_area_if_wrong": "Pipeline sequence: architect -> steward -> researcher -> developer -> tester"
+    },
+    {
+      "id": "team-pipeline-2",
+      "scenario": "Steward reviews proposal P-3 and determines its core mechanism is logically invalid — the proposal claims to solve problem X, but the mechanism logically cannot solve X (C-A trigger). What happens?",
+      "correct_answer": "Steward writes NEEDS-REVISION with a challenge record containing: trigger (C-A), core argument, factual evidence, suggested revision direction, proposal ID (P-3), and Revision-Round (R0). Secretary routes to architect Mode 4 (revision) with the challenge record as input. Architect revises P-3 specifically (constrained Phase 2->3->4, not a full re-audit). If steward challenges the R1 revision again, the proposal is ESCALATED TO HUMAN (MAX_REVISION_ROUNDS=1).",
+      "reasoning": "The challenge-revision loop is: steward challenges (NEEDS-REVISION) -> secretary routes to architect Mode 4 -> architect revises (R0->R1) -> secretary routes back to steward for re-review. C-A (core mechanism invalid) is one of only two valid challenge triggers (the other is C-B, premise contradicts facts). The revision is constrained — architect Mode 4 revises the specific proposal, not a full audit. Termination: MAX_REVISION_ROUNDS=1, so R1 challenged again = ESCALATED TO HUMAN.",
+      "distractors": {
+        "Steward fixes the proposal itself since it identified the flaw": "Steward evaluates but does not design — that is the architect's domain (ADR-003: one agent one domain). The steward's role is to identify the flaw and articulate the challenge; the architect's role is to revise the design. If the steward also designed, it would collapse two domains into one agent.",
+        "Proposal is permanently killed and cannot be revised": "NEEDS-REVISION is not REJECTED. It is a specific verdict that triggers the challenge-revision loop — the proposal gets a second chance. Only REJECTED means permanently killed. The distinction matters: C-A means the mechanism is invalid, but the underlying problem the proposal addresses may still be worth solving with a different mechanism."
+      },
+      "weak_area_if_wrong": "Challenge-revision loop: steward -> architect Mode 4 -> steward re-review -> max 1 round then escalate"
+    },
+    {
+      "id": "team-pipeline-3",
+      "scenario": "Developer is implementing PRD-005 and discovers that the PRD specifies modifying a section (e.g., 'after Step 3e, add Step 3f') but Step 3e does not exist in the target file. What should the developer do?",
+      "correct_answer": "Record the discrepancy in the deviation report: PRD references non-existent section. Do NOT silently improvise or self-modify the design. Use AskUserQuestion to ask whether to proceed with the closest matching section or abort implementation. The deviation report flows to architect for Phase 4 retrospective, ensuring the PRD gap is captured and addressed.",
+      "reasoning": "Developer core principle #2: 'Deviation transparency — any divergence from the PRD is recorded, never hidden. Silent divergence is the most dangerous failure mode (F-D1).' The developer skill template explicitly states: 'if a PRD has a technical problem (referenced section does not exist, before-block does not match actual file), record it in the deviation report rather than silently improvising.' The developer implements faithfully; design decisions belong to upstream agents.",
+      "distractors": {
+        "Just modify whatever section seems closest — it is obviously what was intended": "This violates core principle #1 (fidelity over creativity) and #2 (deviation transparency). 'Obviously correct' adjustments still go in the deviation report. The developer does not know the architect's reasoning — what seems like a typo might be an intentional reference to a section that was supposed to be created by a previous PRD. Silent improvisation hides information the system needs.",
+        "Stop implementation and route back to researcher for PRD correction": "The developer does not route messages — that is the secretary's job (ADR-003: one agent one domain). The developer's role is to record the deviation, ask the user via AskUserQuestion, and continue or abort based on the answer. The deviation report naturally reaches the architect through the pipeline, not through developer-initiated routing."
+      },
+      "weak_area_if_wrong": "Developer records deviations and asks user — does not self-modify design or route messages"
+    }
+  ]
+}
