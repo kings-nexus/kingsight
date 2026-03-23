@@ -1,168 +1,146 @@
-# Prompt Engineering System
+# You don't understand your AI agents. This system fixes that.
 
-An AI-driven development system where agents teach you the project before letting you change it.
+You've been using AI coding assistants for months. You approve proposals you haven't read. You hit enter on outputs you can't evaluate. You know the code works because the tests pass, but you couldn't explain *why* the agent made that design choice if someone asked you.
 
-**The problem**: AI coding tools let you ship fast without understanding what you're building. You approve proposals you don't understand, skip past agent outputs, and "default to enter." Eventually your guidance degrades the project because you can't evaluate what the agents produce. The automation-cognition gap widens with every session.
+**This isn't laziness. It's a structural trap.** The better AI agents get, the less you need to understand to keep the project moving. The less you understand, the worse your guidance becomes. The worse your guidance, the more the agents compensate by working around you. One day you realize you're no longer directing the project — you're just approving things.
 
-**The solution**: A team of 6 specialized AI agents coordinated by a secretary, with a built-in education system that ensures you understand what you're directing. The system doesn't block you — it teaches you, then gets out of the way.
+We built a system that breaks this cycle.
 
-## Start here: the education system
-
-When you first use this project, the system notices you haven't been assessed on its core concepts. Before routing your requests to the agent team, it offers a quick learning flow:
+## What happens when you start
 
 ```
-You: "I think we should redesign the architect's Phase 3"
+You: "I think we should redesign the architect"
 
-Secretary: This operation benefits from understanding ABCDL classification.
-  Your current tier: T0 (unassessed). Options:
+System: Before routing this to the architect agent, I notice you
+  haven't been assessed on how the team pipeline works.
+
+  This isn't a test you can fail — it's 8 minutes of scenarios
+  that will show you how the system actually works. You can skip
+  it anytime.
+
   A) Learn now (~8 min)
   B) Skip and continue
   C) 30-second overview
 ```
 
-If you choose **A**, the system runs a Test-Driven Learning flow — like TDD but for understanding:
+If you choose A, you get three real scenarios — not textbook questions, but actual situations you'll encounter:
+
+> *"User sends: 'I think we should redesign Phase 3 to include a third attack model' — how should this be classified?"*
+
+You answer. Then the system shows you what would actually happen, and why. In 8 minutes you understand something that would have taken weeks of trial-and-error to figure out on your own.
+
+After that, the advisory disappears. You've seen it. You get it. The system gets out of your way.
+
+**The exam is the lesson.** We stole this from TDD — you write the failing test first, then learn just enough to make it pass. Most people learn more from seeing their wrong answer explained than from reading documentation.
+
+## The team inside
+
+Six AI agents, each specialized, working as a pipeline:
 
 ```
-WARMUP (30s)      → Quick overview of the concept
-CLOSED-BOOK (3min) → 3 scenario-based questions (not definitions — real situations)
-OPEN-BOOK (4min)   → Reveals answers with reasoning chains (the exam IS the lesson)
-VERDICT (30s)      → Self-assessment checklist — you decide if you understood
-```
-
-After completing a domain, your tier advances and the advisory disappears for that area. The system never blocks you (Creator Override is always available) — it advises, teaches, and steps aside.
-
-**4 Golden Rules domains** you'll learn first:
-1. **ABCDL classification** — how your messages get routed to the right agent
-2. **Preview gate & routing quality** — why the system shows you its plan before acting
-3. **ADR & constitutional protection** — how design decisions are protected from accidental reversal
-4. **Team pipeline & role boundaries** — which agent does what and why they don't cross lanes
-
-## The agent team
-
-Six specialists, each covering one domain. The secretary routes; the others execute.
-
-```
-User message → Secretary (classify + route)
+Your message → Secretary (classifies + routes)
                     ↓
-    ┌───────────────┼───────────────┐
-    A/B class       C class         L class
-    ↓               ↓               ↓
-  Agent team      Direct answer   Education
-    ↓
   Architect → Steward → Researcher → Developer → Tester → commit
 ```
 
-| Agent | What it does | Key feature |
-|-------|-------------|-------------|
-| **Secretary** | Routes every message (ABCDL), constructs high-quality prompts for agents | 6-dimension quality checklist, preview gate, education tier check |
-| **Architect** | Discovers problems, proposes solutions, attacks its own proposals | 4-phase dialectical protocol, Gemini cross-model adversarial, 7 structural invariants |
-| **Steward** | Reviews proposals for conflicts, dependencies, priorities | C-A/C-B design challenges, batch plan for coupled proposals |
-| **Researcher** | Translates approved proposals into precise implementation specs (PRDs) | Section-path addressing, before/after content blocks, 3-tier verification criteria |
-| **Developer** | Faithfully implements PRDs, reports any deviations | 5 output categories, prompt word fidelity (every wording change is semantic) |
-| **Tester** | Verifies implementation matches design intent | 6-dimension defect audit, DESIGN-DRIFT/DOC-DRIFT detection, E2E scenario testing |
+The architect discovers problems and proposes solutions, then *attacks its own proposals* using a second AI model (Gemini) to find flaws. Only proposals that survive cross-model adversarial review make it through. The steward can challenge the architect's proposals and send them back for revision. The tester doesn't just run tests — it checks whether the implementation actually matches what the architect originally intended (design-drift detection).
 
-### How they work together
+**These agents argue with each other.** And they'll argue with you too. Tell the secretary to skip the preview gate and it pushes back: *"Preview gate is mandatory. Skipping may cause routing errors. Proceed anyway?"* You can override it — you always can — but the system makes sure you know what you're doing first.
 
-The team is a pipeline with feedback loops:
+This isn't an AI assistant that obeys. It's a team that collaborates.
 
-- **Forward flow**: architect proposes → steward approves → researcher writes PRD → developer implements → tester verifies → commit
-- **Challenge loop**: steward can send proposals back to architect for revision (max 1 round, then human decides)
-- **Fix loop**: tester can send failures back to developer (max 3 rounds, then escalate to architect)
-- **Flat management**: any agent can challenge any other agent or the human (ADR-005). Challenges must be fact-based.
+## Why this matters
+
+Every AI coding tool today has the same problem: the human becomes the bottleneck without knowing it. You're the weakest link in a chain of increasingly capable agents, and nobody tells you.
+
+We chose a different approach:
+
+**Teach the human.** Not with documentation (nobody reads docs). Not with tutorials (nobody finishes tutorials). With scenarios that make you go "oh, THAT'S why it works that way" in 8 minutes. Then step aside and let you work.
+
+**Let agents say no.** When your instruction conflicts with an established architecture decision, the system tells you — with evidence, not authority. You can override, but the override is logged and the system learns from it.
+
+**Make every cheat path lead to learning.** Want to read all the exam questions beforehand? Go ahead — reading them IS studying the material. Want to self-assess "I understand everything" after getting 0/3? The system records your diagnostic score separately and adjusts its advisory accordingly. There is no way to game this system that doesn't result in you learning something.
+
+## What's inside
+
+### The education system
+
+4 core domains you'll learn first (the "Golden Rules" — things that cause real damage if you don't understand them):
+
+1. **Message classification** — how your words get routed to the right agent
+2. **Quality gates** — why the system shows you its plan before acting
+3. **Constitutional protection** — how design decisions are protected from accidental reversal
+4. **Team pipeline** — which agent does what and why they stay in their lane
+
+12 scenario-based assessments, each grounded in real situations from this project's own development.
+
+### The agent team
+
+| Agent | One-line description |
+|-------|---------------------|
+| **Secretary** | Routes your messages, constructs high-quality prompts for other agents, runs the education gate |
+| **Architect** | Finds problems, proposes solutions, attacks its own proposals with a second AI model |
+| **Steward** | Reviews proposals for conflicts and dependencies, can challenge and send back |
+| **Researcher** | Translates approved proposals into precise implementation specs |
+| **Developer** | Implements specs faithfully, reports any deviations from the plan |
+| **Tester** | Verifies implementation matches design intent, detects cross-file inconsistencies |
 
 ### Prompt research
 
-A dedicated agent (`/prompt-research`) that discovers which prompt techniques actually work:
+A dedicated agent that discovers which prompt techniques actually work — through controlled experiments, not blog posts. Cross-model validation (Claude + Gemini). Knowledge hierarchy: observations get promoted to principles only after passing 4 criteria across multiple experiments.
 
-- **Scout**: generate hypotheses from literature gaps
-- **Experiment**: controlled A/B tests with cross-model validation (Claude + Gemini)
-- **Distill**: extract validated findings into a knowledge hierarchy (L1 Tactic → L2 Principle → L3 Constitution)
-- **Deploy**: inject proven techniques into production skill templates, measure impact
+### Governance
 
-Founded on 22 literature methods (35+ papers) and 5 validated findings including: poetic prompt re-encoding (+52% creative output, cross-model validated) and mission micro-injection for reasoning stability.
+9 architecture decisions (ADRs) that can't be changed without multi-party review — not even by you. 16 design principles accumulated from real mistakes. 11 deferred items waiting for their trigger conditions to activate. The system has a constitution, and nobody is above it.
 
-## Governance
+### Task tracking
 
-Decisions aren't just made — they're protected.
+A dependency-aware task graph that knows what blocks what, warns you when you skip prerequisites, and tells you what's actually available to work on — not just what exists.
 
-- **ADR** (Architecture Decision Records): settled decisions that prevent re-litigation. Currently 9.
-- **DP** (Design Principles): cross-cutting lessons accumulated via KC-1~4 criteria. Currently 16.
-- **DF** (Deferred Items): rejected-but-valuable ideas with observable trigger conditions for revival. Currently 11.
-- **Constitutional protection** (ADR-006): no single party — human or agent — can unilaterally modify ADRs. Changes require multi-party review.
+## Try it
 
-## Task tracking
-
-`/stack` provides DAG-based task tracking with dependency awareness:
-
-```
-/stack          # view tasks grouped by theme with dependency indicators
-/stack brief    # compact view — just the frontier and blocked items
-/stack next     # what's available to work on right now
-/stack update   # mark done (with deviation detection if you skip prerequisites)
-/stack graph    # ASCII dependency visualization
+```bash
+git clone https://github.com/garrytan/gstack.git ~/.claude/skills/gstack
+cd ~/.claude/skills/gstack && ./setup
 ```
 
-Tasks know what blocks what. Skip a prerequisite and the system asks why (advisory, not blocking).
+Start a conversation. Send any message. The system classifies it, checks if you've been assessed on the relevant domain, and either teaches you or routes your request.
 
-## Design philosophy
+The first 30 minutes will change how you think about working with AI agents.
 
-**Agents can say no.** This isn't a traditional AI assistant that obeys every instruction. Agents challenge humans when instructions conflict with established architecture (ADR-005). The secretary evaluates whether you understand what you're asking for (education gate). The system is collaborative, not hierarchical.
+## The uncomfortable truth
 
-**One good example beats ten rules.** Every agent template prioritizes few-shot examples over abstract instructions (DP-63). The education system's scenarios are real situations, not definitions. The secretary's routing prompt quality is anchored by a complete filled example, not a skeleton template.
+This system was born from watching one person — its creator — repeatedly approve AI outputs without understanding them, give instructions that degraded project quality, and lose control of a project that was supposedly under their direction. Every feature exists because a real failure happened first.
 
-**Fix mechanisms, not analysis.** When something goes wrong, the deliverable is a structural fix (code, config, checklist), not a root cause report (DP-7). Analysis is the means, not the end.
+The education system exists because the creator literally couldn't explain what their own agents were doing. The preview gate exists because the secretary kept routing messages without human review. The constitutional protection exists because decisions kept getting accidentally reversed.
 
-**Advisory, not blocking.** Every gate in the system is advisory (DP-72). Creator Override is always available. The education system never prevents you from working — it teaches, then steps aside.
+If you're using AI coding tools and you've never had that sinking feeling of "I have no idea what just happened but the tests passed" — this project isn't for you.
 
-## Quick start
+If you have — welcome. You're not alone, and it's not your fault. The tools are designed to make understanding optional. We designed a system where understanding is the default.
 
-1. Install gstack: `git clone https://github.com/garrytan/gstack.git ~/.claude/skills/gstack && cd ~/.claude/skills/gstack && ./setup`
-2. Start a conversation. The secretary will classify your first message and guide you.
-3. When the education gate triggers, try "Learn now" — it takes 8 minutes per domain.
-4. After completing the 4 Golden Rules domains (~30 min total), the system runs silently.
+## Status: v0.1
 
-## Project structure
-
-```
-secretary/           # Routing hub + education gate + TDL flow
-architect/           # Four-phase dialectical protocol
-steward/             # Governance review + design challenges
-researcher/          # Proposal-to-PRD translation
-developer/           # Faithful PRD implementation
-tester/              # 6-dimension fidelity audit + E2E scenarios
-prompt-research/     # Prompt technique research (scout/experiment/distill/deploy)
-stack/               # DAG task tracking with deviation detection
-education/scenarios/ # TDL scenario bank (JSON, per domain)
-docs/governance/     # ADR, DP, DF, KC, challenge-format
-.claude/rules/       # L3 rules (secretary identity, education gate, commit style, etc.)
-test/scenarios/      # E2E behavioral test scenarios (YAML)
-```
+| What | State |
+|------|-------|
+| Agent team (6 specialists + secretary) | Complete |
+| Education system (TDL + 12 scenarios + advisory gate) | Complete (MVP) |
+| Governance (9 ADR + 16 DP + 11 DF + constitutional protection) | Complete |
+| Task tracking (DAG + deviation detection) | Complete |
+| Prompt research (4 modes + cross-model validation) | Complete |
+| E2E behavioral testing (6 scenarios + tester Tier 3) | Complete |
+| Multi-session coordination | Designed, not built |
+| Continuous self-evolution | Deferred |
 
 ## For contributors
 
 ```bash
 bun install              # install dependencies
-bun test                 # run free tests (320 pass, <1s)
-bun run gen:skill-docs   # regenerate SKILL.md from templates
-bun run skill:check      # health dashboard for all skills
+bun test                 # 320 tests, <1s
+bun run gen:skill-docs   # regenerate skill templates
+bun run skill:check      # health dashboard
 ```
 
-Bisect commits — each commit is one logical change. Infrastructure separate from features.
-
-## Status
-
-**v0.1 — MVP**
-
-| Component | Status |
-|-----------|--------|
-| Agent team (6 agents + secretary) | Complete |
-| Education system (TDL + 12 scenarios + gate) | Complete (MVP) |
-| Governance (9 ADR + 16 DP + 11 DF) | Complete |
-| Task tracking (DAG + deviation detection) | Complete |
-| Prompt research (4 modes + knowledge hierarchy) | Complete |
-| E2E scenario testing (6 scenarios + tester Tier 3) | Complete |
-| Multi-session coordination | Designed, not built |
-| Continuous learning (self-evolution) | Deferred |
+Every commit is one logical change. Infrastructure separate from features. Every agent template has few-shot examples because one good example beats ten rules.
 
 ## License
 
