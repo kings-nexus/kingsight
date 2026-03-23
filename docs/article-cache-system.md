@@ -214,7 +214,7 @@ Secretary Agent 做的第一件事，不是执行，而是分类你的意图。
 
 ---
 
-这套系统已经开源：[GitHub](https://github.com/garrytan/gstack) | [English README](../README-prompt-system.md) | [中文 README](../README.zh-CN.md)
+这套系统已经开源：[GitHub](https://github.com/kings-nexus/kingsight) | [English README](../README-prompt-system.md) | [中文 README](../README.zh-CN.md)
 
 当前状态是 v0.1 MVP——6 个 agent 的完整团队、教育系统、治理框架、任务追踪都已经可以用了。是的，这整篇文章描述的所有东西都不是 PPT，是能跑的代码。320 个测试通过，12 个教育场景就绪，9 个架构决策被宪法保护着。
 

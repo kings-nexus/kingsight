@@ -105,7 +105,7 @@
 ## 试一下
 
 ```bash
-git clone https://github.com/garrytan/gstack.git ~/.claude/skills/gstack
+git clone https://github.com/kings-nexus/kingsight.git ~/.claude/skills/kingsight
 cd ~/.claude/skills/gstack && ./setup
 ```
 
