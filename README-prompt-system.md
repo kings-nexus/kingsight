@@ -122,6 +122,17 @@ tasks:
 - **Themes**: tasks grouped by domain (infrastructure, agents, governance, education)
 - Shares infrastructure with future education system via `{{TASKGRAPH_CORE}}`
 
+### Education System — TDL (Test-Driven Learning)
+
+AI-driven learning system that breaks the automation-cognition decoupling loop. Users must understand the project to guide it effectively.
+
+- **Tiered authorization**: T0 (unassessed) → T1 (basic) → T2 (sufficient). Advisory gating, never blocking (DP-72). Creator Override always available.
+- **TDL four stages**: WARMUP (30s overview) → CLOSED-BOOK (3 scenario simulations) → OPEN-BOOK (reveal + teach) → VERDICT (self-assessment checklist, DP-74)
+- **4 Golden Rules domains**: ABCDL classification, preview gate quality, ADR constitutional protection, team pipeline roles
+- **Scenario bank**: 12 seed scenarios in `education/scenarios/`, JSON format with reasoning + distractors + weak_area tags
+- **Domain-inference**: maps operations to required knowledge domains, secretary checks tier before routing
+- **Gaming-convergent**: pre-reading scenarios IS studying the material — every cheat path converges to learning
+
 ## Architecture decisions
 
 ### Independent project, not a fork
