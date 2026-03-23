@@ -1,6 +1,7 @@
 ---
 name: plan-ceo-review
 version: 1.0.0
+effort: max
 description: |
   CEO/founder-mode plan review. Rethink the problem, find the 10-star product,
   challenge premises, expand scope when it creates a better product. Four modes:

@@ -1,6 +1,7 @@
 ---
 name: retro
 version: 2.0.0
+effort: max
 description: |
   Weekly engineering retrospective. Analyzes commit history, work patterns,
   and code quality metrics with persistent history and trend tracking.

@@ -1,6 +1,7 @@
 ---
 name: steward
 version: 1.0.0
+effort: max
 description: |
   Governance reviewer for the prompt engineering system. Reads architect
   proposals, evaluates conflicts/dependencies/priorities, and produces

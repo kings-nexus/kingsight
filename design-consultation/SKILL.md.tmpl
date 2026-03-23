@@ -1,6 +1,7 @@
 ---
 name: design-consultation
 version: 1.0.0
+effort: max
 description: |
   Design consultation: understands your product, researches the landscape, proposes a
   complete design system (aesthetic, typography, color, layout, spacing, motion), and

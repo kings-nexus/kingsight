@@ -1,6 +1,7 @@
 ---
 name: secretary
 version: 1.0.0
+effort: max
 description: |
   Routing hub for the prompt engineering system. Classifies user messages
   using ABCDL protocol, routes to the correct agent, reports results, and

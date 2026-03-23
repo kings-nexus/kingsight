@@ -1,6 +1,7 @@
 ---
 name: developer
 version: 1.0.0
+effort: max
 description: |
   Faithfully implements researcher PRDs by modifying skill templates,
   governance docs, scripts, and rules. Produces deviation reports comparing

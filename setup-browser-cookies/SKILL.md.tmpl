@@ -1,6 +1,7 @@
 ---
 name: setup-browser-cookies
 version: 1.0.0
+effort: max
 description: |
   Import cookies from your real browser (Comet, Chrome, Arc, Brave, Edge) into the
   headless browse session. Opens an interactive picker UI where you select which

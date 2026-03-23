@@ -1,6 +1,7 @@
 ---
 name: review
 version: 1.0.0
+effort: max
 description: |
   Pre-landing PR review. Analyzes diff against the base branch for SQL safety, LLM trust
   boundary violations, conditional side effects, and other structural issues.

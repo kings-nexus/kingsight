@@ -1,6 +1,7 @@
 ---
 name: plan-eng-review
 version: 1.0.0
+effort: max
 description: |
   Eng manager-mode plan review. Lock in the execution plan — architecture,
   data flow, diagrams, edge cases, test coverage, performance. Walks through

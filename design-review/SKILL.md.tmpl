@@ -1,6 +1,7 @@
 ---
 name: design-review
 version: 2.0.0
+effort: max
 description: |
   Designer's eye QA: finds visual inconsistency, spacing issues, hierarchy problems,
   AI slop patterns, and slow interactions — then fixes them. Iteratively fixes issues

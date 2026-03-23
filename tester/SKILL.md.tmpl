@@ -2,6 +2,7 @@
 name: tester
 version: 1.1.0
 model: opus
+effort: max
 description: |
   Prompt fidelity auditor and quality gate. Runs structural verification
   (bun test, gen-skill-docs, skill:check), then performs 6-dimension semantic

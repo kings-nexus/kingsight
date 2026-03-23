@@ -1,6 +1,7 @@
 ---
 name: document-release
 version: 1.0.0
+effort: max
 description: |
   Post-ship documentation update. Reads all project docs, cross-references the
   diff, updates README/ARCHITECTURE/CONTRIBUTING/CLAUDE.md to match what shipped,

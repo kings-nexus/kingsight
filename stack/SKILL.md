@@ -1,6 +1,7 @@
 ---
 name: stack
 version: 2.0.0
+effort: max
 description: |
   DAG-based task graph with dependency tracking and deviation detection.
   Shows where you are in the project, what's done, what's available next,

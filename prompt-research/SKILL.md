@@ -2,6 +2,7 @@
 name: prompt-research
 version: 1.1.0
 model: opus
+effort: max
 description: |
   Prompt engineering research through controlled experiments. Four modes:
   scout (hypothesis generation), experiment (controlled execution),

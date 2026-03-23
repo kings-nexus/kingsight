@@ -1,6 +1,7 @@
 ---
 name: researcher
 version: 1.0.0
+effort: max
 description: |
   Translates steward-APPROVED architect proposals into executable PRDs
   (Product Requirement Documents) with section-path-level modification specs,

@@ -1,6 +1,7 @@
 ---
 name: architect
 version: 1.0.0
+effort: max
 description: |
   Four-phase dialectical protocol for the prompt engineering system.
   AUDIT (diagnose) -> ENVISION (propose) -> ADVERSARIAL (attack) -> META (reflect).
